@@ -1,0 +1,15 @@
+在 Kubernetes(k8s) 创建 service 使用nodePort 暴露 外部端口6379 时报错
+
+编辑 kube-apiserver.yaml文件
+
+vim /etc/kubernetes/manifests/kube-apiserver.yaml
+1
+找到 --service-cluster-ip-range 这一行，在这一行的下一行增加 如下内容
+
+- --service-node-port-range=1-65535
+
+
+最后 重启 kubelet
+
+systemctl daemon-reload
+systemctl restart kubelet

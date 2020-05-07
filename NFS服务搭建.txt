@@ -1,0 +1,47 @@
+NFS 服务
+
+
+服务端：
+yum install -y nfs-utils
+
+编辑exports文件，添加从机 
+vim /etc/exports
+/home/nfs/ 192.168.248.0/24(rw,sync,fsid=0)
+同192.168.248.0/24一个网络号的主机可以挂载NFS服务器上的/home/nfs/目录到自己的文件系统中
+
+rw表示可读写；sync表示同步写，fsid=0表示将/data找个目录包装成根目录
+
+启动nfs服务
+先为rpcbind和nfs做开机启动：(必须先启动rpcbind服务) 
+systemctl enable rpcbind.service
+systemctl enable nfs-server.service
+然后分别启动rpcbind和nfs服务： 
+systemctl start rpcbind.service
+systemctl start nfs-server.service
+确认NFS服务器启动成功： 
+rpcinfo -p
+
+检查 NFS 服务器是否挂载我们想共享的目录 /home/nfs/：
+exportfs -r
+#使配置生效
+exportfs
+#可以查看到已经ok
+/home/nfs 192.168.248.0/24
+
+
+
+NFS 客户端：
+yum install -y nfs-utils
+启动rpcbind服务
+先为rpcbind做开机启动：
+systemctl enable rpcbind.service
+然后启动rpcbind服务：
+systemctl start rpcbind.service
+
+检查 NFS 服务器端是否有目录共享：showmount -e nfs服务器的IP
+showmount -e 192.168.248.208
+
+使用 mount 挂载服务器端的目录/home/nfs到客户端某个目录下
+mount -t nfs 192.168.248.208:/home/nfs /home/nfs
+
+

@@ -1,0 +1,108 @@
+服务器设置
+hostname	ip
+byj-ubuntu-pc 172.16.114.170   	--master node
+techserver02  172.16.114.245  	--worker node
+
+1. 检查hostname
+# 修改 hostname
+hostnamectl set-hostname your-new-host-name
+# 查看修改结果
+hostnamectl status
+# 设置 hostname 解析
+echo "127.0.0.1   $(hostname)" >> /etc/hosts
+
+2. 检查网络
+
+ ip route show
+ ip addr
+ 所有节点上 Kubernetes 所使用的 IP 地址必须可以互通（无需 NAT 映射、无安全组或防火墙隔离）
+ 
+3. 安装
+使用 root 身份在所有节点执行
+
+针对 centos 系统： 
+# 在 master 节点和 worker 节点都要执行
+# 最后一个参数 1.18.0 用于指定 kubenetes 版本，支持所有 1.18.x 版本的安装
+# 腾讯云 docker hub 镜像
+# export REGISTRY_MIRROR="https://mirror.ccs.tencentyun.com"
+# DaoCloud 镜像
+# export REGISTRY_MIRROR="http://f1361db2.m.daocloud.io"
+# 华为云镜像
+# export REGISTRY_MIRROR="https://05f073ad3c0010ea0f4bc00b7105ec20.mirror.swr.myhuaweicloud.com"
+# 阿里云 docker hub 镜像
+export REGISTRY_MIRROR=https://registry.cn-hangzhou.aliyuncs.com
+curl -sSL https://kuboard.cn/install-script/v1.18.x/install_kubelet.sh | sh -s 1.18.0
+
+
+针对 Ubuntu系统 
+ sudo sh ./install_kubelet_ubuntu.sh
+
+
+4. 初始化master节点
+# 只在 master 节点执行
+# 替换 x.x.x.x 为 master 节点实际 IP（请使用内网 IP）
+# export 命令只在当前 shell 会话中有效，开启新的 shell 窗口后，如果要继续安装过程，请重新执行此处的 export 命令
+export MASTER_IP=172.16.114.170
+# 替换 apiserver.demo 为 您想要的 dnsName
+export APISERVER_NAME=apiserver.demo
+# Kubernetes 容器组所在的网段，该网段安装完成后，由 kubernetes 创建，事先并不存在于您的物理网络中
+export POD_SUBNET=10.100.0.1/16
+echo "${MASTER_IP}    ${APISERVER_NAME}" >> /etc/hosts
+curl -sSL https://kuboard.cn/install-script/v1.18.x/init_master.sh | sh -s 1.18.0
+
+检查结果：
+# 只在 master 节点执行
+
+# 执行如下命令，等待 3-10 分钟，直到所有的容器组处于 Running 状态
+watch kubectl get pod -n kube-system -o wide
+
+# 查看 master 节点初始化结果
+kubectl get nodes -o wide
+
+
+5. 初始化 worker节点
+# 只在 master 节点执行
+kubeadm token create --print-join-command
+获取kubeadm join 命令及参数,如下所示:
+# kubeadm token create 命令的输出
+
+kubeadm join apiserver.demo:6443 --token lpe8dw.4h5v2y3srr0swpe6     --discovery-token-ca-cert-hash sha256:db7399d1d94e52383949071683dd8cd1ece708dafd3ca576da3bd2b24bdf073b 
+
+该 token 的有效时间为 2 个小时，2小时内，您可以使用此 token 初始化任意数量的 worker 节点。
+
+#初始化worker,针对所有的 worker 节点执行
+# 只在 worker 节点执行
+# 替换 x.x.x.x 为 master 节点的内网 IP
+export MASTER_IP=172.16.114.170
+# 替换 apiserver.demo 为初始化 master 节点时所使用的 APISERVER_NAME
+export APISERVER_NAME=apiserver.demo
+echo "${MASTER_IP}    ${APISERVER_NAME}" >> /etc/hosts
+
+# 替换为 master 节点上 kubeadm token create 命令的输出
+kubeadm join apiserver.demo:6443 --token lpe8dw.4h5v2y3srr0swpe6     --discovery-token-ca-cert-hash sha256:db7399d1d94e52383949071683dd8cd1ece708dafd3ca576da3bd2b24bdf073b 
+
+#如果是重新加入worker节点, 会遇到提示已有配置的错误
+#运行下面的命令, 重新进入初始化配置
+#重启一下kubeadm：  kubeadm reset
+
+检查初始化结果
+在 master 节点上执行
+# 只在 master 节点执行
+kubectl get nodes -o wide
+
+
+6. 安装 Ingress Controller
+在 master 节点上执行
+# 只在 master 节点执行
+kubectl apply -f https://kuboard.cn/install-script/v1.18.x/nginx-ingress.yaml
+
+
+7. 重启
+
+#在所有节点上执行
+systemctl daemon-reload
+systemctl restart docker
+systemctl restart kubelet
+
+
+

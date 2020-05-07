@@ -1,0 +1,20 @@
+iptables -A INPUT  -p tcp  --dport 111 -j ACCEPT 
+iptables -A OUTPUT  -p tcp  --sport 111 -j ACCEPT 
+
+iptables -A INPUT  -p udp  --dport 111 -j ACCEPT 
+iptables -A OUTPUT  -p udp  --sport 111 -j ACCEPT 
+
+
+查看端口
+iptables -L -n --line-number |grep 111
+
+
+删除某个配置
+iptables -D INPUT 5
+
+iptables -D OUTPUT 5
+#INPUT OUTPUT 要和对应的 编号一致
+
+这样的设置好了，只是临时的， 重启服务器还是会恢复原来没有设置的状态
+还要使用 service iptables save 进行保存
+firewall rules 防火墙的规则保存在 /etc/sysconfig/iptables
