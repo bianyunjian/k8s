@@ -8,16 +8,8 @@
 # https://docs.docker.com/install/linux/linux-postinstall/
 
 # 卸载旧版本
-apt remove -y docker \
-docker-client \
-docker-client-latest \
-docker-common \
-docker-latest \
-docker-latest-logrotate \
-docker-logrotate \
-docker-selinux \
-docker-engine-selinux \
-docker-engine
+apt remove -y docker docker-client docker-client-latest docker-common docker-latest  
+docker-latest-logrotate docker-logrotate docker-selinux docker-engine-selinux docker-engine
  
 # 安装并启动 docker
 # step 1: 安装必要的一些系统工具
@@ -38,7 +30,7 @@ systemctl start docker
 
 # 安装 nfs-common
 # 必须先安装 nfs-common 才能挂载 nfs 网络存储
-apt install nfs-kernel-server nfs-common
+apt install -y nfs-kernel-server nfs-common
 apt install -y wget
 
 # 关闭 防火墙

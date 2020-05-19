@@ -39,9 +39,9 @@ systemctl enable rpcbind.service
 systemctl start rpcbind.service
 
 检查 NFS 服务器端是否有目录共享：showmount -e nfs服务器的IP
-showmount -e 192.168.248.208
+showmount -e 172.16.114.245
 
 使用 mount 挂载服务器端的目录/home/nfs到客户端某个目录下
-mount -t nfs 192.168.248.208:/home/nfs /home/nfs
+mount -t nfs 172.16.114.245:/root/nfs_root /home/nfs
 
 

@@ -1,0 +1,104 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: '2'
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: NodePort
+    k8s.eip.work/workload: nexus3
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"DaemonSet","metadata":{"annotations":{"deprecated.daemonset.template.generation":"2","k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"nexus3"},"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"},"name":"nexus3","namespace":"dev","resourceVersion":"2782703"},"spec":{"revisionHistoryLimit":10,"selector":{"matchLabels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"}},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"}},"spec":{"containers":[{"image":"sonatype/nexus3:latest","imagePullPolicy":"IfNotPresent","name":"nexus3","ports":[{"containerPort":8081,"protocol":"TCP"}],"resources":{"limits":{},"requests":{}},"volumeMounts":[{"mountPath":"/nexus-data","name":"nexus-pv","readOnly":false}]}],"dnsConfig":{},"dnsPolicy":"ClusterFirst","nodeSelector":{"worknode":"local-dev-245"},"restartPolicy":"Always","terminationGracePeriodSeconds":30,"volumes":[{"name":"nexus-pv","persistentVolumeClaim":{"claimName":"nexus"}}]}}}}
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: nexus3
+  name: nexus3
+  namespace: dev
+  resourceVersion: '2783403'
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: ''
+      k8s.eip.work/name: nexus3
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: ''
+        k8s.eip.work/name: nexus3
+    spec:
+      containers:
+        -
+          image: 'sonatype/nexus3:latest'
+          imagePullPolicy: IfNotPresent
+          name: nexus3
+          ports:
+            - containerPort: 8081
+              protocol: TCP
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - mountPath: /nexus-data
+              name: nexus-pv
+              readOnly: false
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        worknode: local-dev-245
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: nexus-pv
+          persistentVolumeClaim:
+            claimName: nexus
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    k8s.eip.work/workload: nexus3
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/workload":"nexus3"},"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"},"name":"nexus3","namespace":"dev","resourceVersion":"2782680"},"spec":{"clusterIP":"10.96.65.7","ports":[{"name":"zqinx6","nodePort":3600,"port":8081,"protocol":"TCP","targetPort":8081}],"selector":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"},"type":"NodePort"}}
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: nexus3
+  name: nexus3
+  namespace: dev
+  resourceVersion: '2783377'
+spec:
+  clusterIP: 10.96.65.7
+  ports:
+    - name: zqinx6
+      nodePort: 3600
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+  selector:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: nexus3
+  type: NodePort
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    k8s.eip.work/workload: nexus3
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: nexus3
+  name: nexus3
+  namespace: dev
+  resourceVersion: '2783435'
+spec:
+  rules:
+    - host: nexus3.dev.hankutech.com
+      http:
+        paths:
+          - backend:
+              serviceName: nexus3
+              servicePort: zqinx6
+            path: /
+
+

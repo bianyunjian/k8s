@@ -1,0 +1,343 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: ingress-nginx
+  name: ingress-nginx-controller
+  annotations:
+    k8s.eip.work/workload: ingress-nginx-controller
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'false'
+    k8s.eip.work/service: NodePort
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"deployment.kubernetes.io/revision":"4","k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"ingress-nginx-controller"},"labels":{"app.kubernetes.io/component":"controller","app.kubernetes.io/instance":"ingress-nginx","app.kubernetes.io/name":"ingress-nginx"},"name":"ingress-nginx-controller","namespace":"ingress-nginx","resourceVersion":"2779471"},"spec":{"progressDeadlineSeconds":600,"replicas":1,"revisionHistoryLimit":10,"selector":{"matchLabels":{"app.kubernetes.io/component":"controller","app.kubernetes.io/instance":"ingress-nginx","app.kubernetes.io/name":"ingress-nginx"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"labels":{"app.kubernetes.io/component":"controller","app.kubernetes.io/instance":"ingress-nginx","app.kubernetes.io/name":"ingress-nginx"}},"spec":{"containers":[{"args":["/nginx-ingress-controller","--election-id=ingress-controller-leader","--ingress-class=nginx","--configmap=ingress-nginx/ingress-nginx-controller","--validating-webhook=:8443","--validating-webhook-certificate=/usr/local/certificates/cert","--validating-webhook-key=/usr/local/certificates/key"],"env":[{"name":"POD_NAME","valueFrom":{"fieldRef":{"fieldPath":"metadata.name"}}},{"name":"POD_NAMESPACE","valueFrom":{"fieldRef":{"fieldPath":"metadata.namespace"}}}],"image":"quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.32.0","imagePullPolicy":"IfNotPresent","lifecycle":{"preStop":{"exec":{"command":["/wait-shutdown"]}}},"livenessProbe":{"failureThreshold":3,"httpGet":{"path":"/healthz","port":10254,"scheme":"HTTP"},"initialDelaySeconds":10,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1},"name":"controller","ports":[{"containerPort":80,"hostPort":80,"name":"http","protocol":"TCP"},{"containerPort":443,"hostPort":443,"name":"https","protocol":"TCP"},{"containerPort":8443,"name":"webhook","protocol":"TCP"}],"readinessProbe":{"failureThreshold":3,"httpGet":{"path":"/healthz","port":10254,"scheme":"HTTP"},"initialDelaySeconds":10,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1},"resources":{"limits":{},"requests":{"cpu":"100m","memory":"90Mi"}},"securityContext":{"allowPrivilegeEscalation":true,"capabilities":{"add":["NET_BIND_SERVICE"],"drop":["ALL"]},"runAsUser":101},"volumeMounts":[{"mountPath":"/usr/local/certificates/","name":"webhook-cert","readOnly":true}]}],"dnsPolicy":"ClusterFirst","nodeName":"techserver02","restartPolicy":"Always","serviceAccountName":"ingress-nginx","terminationGracePeriodSeconds":300,"volumes":[{"name":"webhook-cert","secret":{"defaultMode":420,"secretName":"ingress-nginx-admission"}}]}}}}
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/instance: ingress-nginx
+      app.kubernetes.io/name: ingress-nginx
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/instance: ingress-nginx
+        app.kubernetes.io/name: ingress-nginx
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      serviceAccountName: ingress-nginx
+      initContainers: []
+      containers:
+        - image: >-
+            quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.32.0
+          imagePullPolicy: IfNotPresent
+          name: controller
+          volumeMounts:
+            - name: webhook-cert
+              readOnly: true
+              mountPath: /usr/local/certificates/
+          args:
+            - /nginx-ingress-controller
+            - '--election-id=ingress-controller-leader'
+            - '--ingress-class=nginx'
+            - '--configmap=ingress-nginx/ingress-nginx-controller'
+            - '--validating-webhook=:8443'
+            - '--validating-webhook-certificate=/usr/local/certificates/cert'
+            - '--validating-webhook-key=/usr/local/certificates/key'
+          resources:
+            requests:
+              cpu: 100m
+              memory: 90Mi
+            limits:
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /wait-shutdown
+          securityContext:
+            capabilities:
+              add:
+                - NET_BIND_SERVICE
+              drop:
+                - ALL
+            runAsUser: 101
+            allowPrivilegeEscalation: true
+          ports:
+            - name: http
+              hostPort: 80
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              hostPort: 443
+              containerPort: 443
+              protocol: TCP
+            - name: webhook
+              containerPort: 8443
+              protocol: TCP
+      volumes:
+        - name: webhook-cert
+          secret:
+            secretName: ingress-nginx-admission
+            defaultMode: 420
+            items: []
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options: []
+      nodeName: techserver02
+      terminationGracePeriodSeconds: 300
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: ingress-nginx
+  name: ingress-nginx-controller
+  annotations:
+    k8s.eip.work/workload: ingress-nginx-controller
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/workload":"ingress-nginx-controller"},"labels":{"app.kubernetes.io/component":"controller","app.kubernetes.io/instance":"ingress-nginx","app.kubernetes.io/name":"ingress-nginx"},"name":"ingress-nginx-controller","namespace":"ingress-nginx","resourceVersion":"2773076"},"spec":{"clusterIP":"10.96.38.229","ports":[{"name":"http","nodePort":10853,"port":80,"protocol":"TCP","targetPort":80},{"name":"https","nodePort":28050,"port":443,"protocol":"TCP","targetPort":443}],"selector":{"app.kubernetes.io/component":"controller","app.kubernetes.io/instance":"ingress-nginx","app.kubernetes.io/name":"ingress-nginx"},"type":"NodePort"}}
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+spec:
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+      nodePort: 10853
+    - port: 443
+      targetPort: 443
+      protocol: TCP
+      name: https
+      nodePort: 28050
+
+---
+metadata:
+  name: ingress-controller-leader-nginx
+  namespace: ingress-nginx
+  annotations:
+    control-plane.alpha.kubernetes.io/leader: >-
+      {"holderIdentity":"ingress-nginx-controller-5579df5678-f9tbm","leaseDurationSeconds":30,"acquireTime":"2020-05-14T01:50:56Z","renewTime":"2020-05-18T03:04:55Z","leaderTransitions":1}
+  managedFields:
+    - manager: nginx-ingress-controller
+      operation: Update
+      apiVersion: v1
+      time: '2020-05-18T03:04:55Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:control-plane.alpha.kubernetes.io/leader': {}
+kind: ConfigMap
+apiVersion: v1
+
+---
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/version: 0.32.0
+    helm.sh/chart: ingress-nginx-2.0.3
+  annotations: {}
+  managedFields:
+    - manager: kubectl
+      operation: Update
+      apiVersion: v1
+      time: '2020-05-13T07:51:12Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:kubectl.kubernetes.io/last-applied-configuration': {}
+          'f:labels':
+            .: {}
+            'f:app.kubernetes.io/component': {}
+            'f:app.kubernetes.io/instance': {}
+            'f:app.kubernetes.io/managed-by': {}
+            'f:app.kubernetes.io/name': {}
+            'f:app.kubernetes.io/version': {}
+            'f:helm.sh/chart': {}
+kind: ConfigMap
+apiVersion: v1
+
+---
+metadata:
+  name: ingress-nginx
+  namespace: ingress-nginx
+  managedFields:
+    - manager: Mozilla
+      operation: Update
+      apiVersion: v1
+      time: '2020-05-14T01:48:52Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data':
+          .: {}
+          'f:tls.crt': {}
+          'f:tls.key': {}
+        'f:type': {}
+data:
+  tls.crt: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR1ekNDQXFNQ0ZEQ2N2eDROcmNUTXNrOG4xYjdxQnh6WVNvenRNQTBHQ1NxR1NJYjNEUUVCQ3dVQU1JR1oKTVFzd0NRWURWUVFHRXdKRFRqRVJNQThHQTFVRUNBd0lTR0Z1WjFwb2IzVXhFVEFQQmdOVkJBY01DRWhoYm1kYQphRzkxTVJJd0VBWURWUVFLREFsb1lXNXJkWFJsWTJneEVqQVFCZ05WQkFzTUNXaGhibXQxZEdWamFERVlNQllHCkExVUVBd3dQS2k1b1lXNXJkWFJsWTJndVkyOXRNU0l3SUFZSktvWklodmNOQVFrQkZoTmhaRzFwYmtCb1lXNXIKZFhSbFkyZ3VZMjl0TUI0WERUSXdNRFV4TkRBeE5EY3lOMW9YRFRJeE1EVXhOREF4TkRjeU4xb3dnWmt4Q3pBSgpCZ05WQkFZVEFrTk9NUkV3RHdZRFZRUUlEQWhJWVc1bldtaHZkVEVSTUE4R0ExVUVCd3dJU0dGdVoxcG9iM1V4CkVqQVFCZ05WQkFvTUNXaGhibXQxZEdWamFERVNNQkFHQTFVRUN3d0phR0Z1YTNWMFpXTm9NUmd3RmdZRFZRUUQKREE4cUxtaGhibXQxZEdWamFDNWpiMjB4SWpBZ0Jna3Foa2lHOXcwQkNRRVdFMkZrYldsdVFHaGhibXQxZEdWagphQzVqYjIwd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUURQTk9IRVRHZ3FONjBECmpQNFk1cWlQMUVKUTlZTGlPdlllMVlBTmZ1WFIyWU9ic0lhVlFWeFY2eGVxQkx5d0c4bnQ0VXU4N3RERC9jZC8KeGtzMHRoRWZubUM5QnJzWjU2K2dwLzFCckUwaE9Wekk2eEpRMFhNQjBTb0xFT2NNNW5nRXF2UFFxcUNocnNGdgpsRGFRdDRndjMyZUEybzVBNytlY2pBQ3NZZGhGczdYSXB5WVNycGRaSlFpS2xIZFpuUzNjQVYyRnFtZnpBTU9vCitpNWZPL3FyYytnSWJNOFVyNmt1V1dyVVpPWnU5UHlmeTFmQ05xa3VycW1Gam90anpqNUYzeWc3em83R0hUaHEKRVlmTHJxLzZNNVphQkRsV3VGanRqSHJTcTRabVR0VnJ3TkJtaHUwZ0VlWUxtSkZrL1JtYWg1SzVaN1Rwbyt2Zgo1UStGOHJaM0FnTUJBQUV3RFFZSktvWklodmNOQVFFTEJRQURnZ0VCQUdYUFhNaWJLVkdTcy84QzBVVU4yTEV1Cm9uSWhhWlZtMXVJWHIyQmJTdEhsSlljQ25BbWlDYVVsR1V6ZDMremk0WEk1RU45aEo0OVdPZTVzNEMxVXQzeEYKcFIxano5ZlUrYWJPTXhmZUVSazBPNE1SQW9PbFBCWTc4cUUrQjloNUJwSkxqSThGakpQU2JOVkdjUGJHN2kzaQpSK3o5Z29wRVJPdHZ6ZTRCS3Q0SURkRno0NDVZc0R6QkJmN0RqSTM3cUtPUnlyOHRqbVFpek5mVVZ2a0VjRnRQCno0YnNoWmdrUENIUDNNOXYrVHhQOG1BVDI2N0hCTHY2WnRtMmNLa1RUMlZkNEVpdzUvSTk1Q3ZWL21JK2JkZE0KSlFLaXhoZGpvaDdkc2ZKa3FJUlVnZEg4Y3ZlSXdGWGkrZDBlVkZibDFYeHVpcmdNajVUWHdULzd1UEl0bTlBPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0t
+  tls.key: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpQcm9jLVR5cGU6IDQsRU5DUllQVEVECkRFSy1JbmZvOiBERVMtRURFMy1DQkMsMkM4QTY5NTdCOUJFQzA1RgoKZEhBV1Q4cEZIRUhiRm54UDRDRStqd2VITE5ZRUtDSElLdmVUclVYSWtabUV6cE5Db1hqWmtEdXZwWGpBamtqQQorWGtpRHpjYU5LTVYxN1E3eEdvaythQllhY016QmNHbjFESEpGQ2JjV3U4QUhaSThaT1g0RW9lT2IxTHFON1dECkVzejlIVlBFM29QaHFwcEE2RjdBQy9WTXlsWTVzLzRqcFVrdDhjcWZhQnBIbjd1TXd6ZzJycmxFVTRYL1NTencKajJ6WVhkSk9EWUtsVU5POUZPcEdlNUVzZFVVNTFQeEhHcmZCNjgwSFBYV1dPMUNvNG81WUwxb1NDZXZZOUJ4ZQo1Y242THl4djNUcnFkWG92cUN2V1F6RGJWYXJwa3FubGdOWEZqUmNjSjRzNDJVQzIrSWhoNi9hMzBQZFR3NFRkCkgvVUJYRndBR254UUNydHdkY3J2RW9CaTdrUGJ1NEwyZm04WWk5MzdTVE0rNFZ6RXR3R2lzQlhhemkxZW40c2UKM2tRWG5QeVVnTnp3NllxRVc5TytYa3ZzUjNXZXB6a21lWU9BNUdhQkFSeW81M2phelo0ZEpaQnlicmNQV29tZApSaEM2eTRUcFVVTURISlIzQ2JqZDc1MHJuVHJnWUh2cEFNS1lTNlZtekhUU05qSDRDZkVZR0EwWlVzSGNlRU4yCndyTmFmei9GNlFuZFFwWVk5aURObmRkUy9SbWE1RlJTaStTengyZEI1N1VsWldibUY4SVJwZURIVzZqSE1aU0MKS0hocmFKL3NYcEF2a3Y4a0dBaFl2VnRRbnZsUUFaUzdLMG1UQTVkM2tFYVY0dEpGYk5FZTNoakhFam9XU0dTWgpWNy9EUktneFhaSDA5KyttRG5QaEs1WkZ6QlNsRklYZzIxd0RFb2ppcVFodHk2anRKK0pzWDBmd1lqQjR4dEt2CllhRmNtQm9TTTRyM0RzSE5PeHNjd28vWk1od3RyTUY1UnNvbTNpaWNobWpHeC9KSXpkQzVGQ21NWW1SY3JmWTUKN1dRTE82WVBCbzE4N2Y1bnAzNXhoTTR5YzhVNHFoVzZuT292YmkyQllrb3IvYjRkeHRVeGVxWW4wbXl4b2hVUQo4cEk2VGxOaUlCdmM2bk5oY0FMV0p5b2lYV1FNamMxbTFoanlLOHoxajFLOFJsaERaZVlWRnJrNVFHenhubWdwCkFMTG1QaHROZi9VbnVTaVE0VmowTE9XQXpjWjBzcFd5Y0hwSEJMK3dISU9OTE9sbk9XWGZHbmV6SVk4Wi9IejMKdUJ1MjVlVmYzNUhJMFRjNURvbEpNQVdpbkMyc2EraUNkckJZUkpjMHptakl4N1Uzemo5WkRrNjF5OGVCdDB3QQpDZEFidWV0NnJXS056bDVMTVFxWEpUVUc2Ym5HalpTRGs3ajR1YWZHeDVsMExhNms5REFwa1VJMTZaQ0JaMngyCnJVSlljakZkUmczSmR2a0NEenpoOUhxMmx3MHNUbXR0UEtGd3JOZmhxekQzV283MTZHeHB6Z1E3MnFnTFdIaWEKbVBtSjUwWmI3Vkg3d1JtdkJuamNCOU1DUm9saStvcXFVVE13Tzl4V2R6VHVURVY5eWFFMUlsNVJQS2NYK2Y1ZQpDZEp5c3ROZnpSZnp0dThzZGwwK1hGa3ljc0UxalZGNFBPQ01aRzB2MTg0RlJNZFNXVXlMWHZEOE1ocUdZaHh5CnVWUFMyaVJYMW1uM0J3MEZ0VVNoR1FXdisvS1NLSWt2MDZsSExLV1VmaTB1Y0ViSnVJcHpmc2xYcC9LMUgzTmUKQ2x2d05DLytZMHhsM0NCazl1SFc5L3o4YzBGTEhabDdzeVYzQkpZTHAzaW4wRTN4UTlIVklpRUxuMTVCSXJtbQpZUEV1d2NUMkttMGdGaTNteXNxcjcrUjNidXVOTUsvbDE2L0p2RTVMeUtvMkhsall4M1l0RG9tdHVKQW4yWGk3CjdzNGhtcUNXQnBVV2pDbSswTW5GY3lwWFUxcFY1d3ROSFdVWTFuWDVGa2dmK2xYd1dUVCtIQ2RCdnN1ZDRhUEEKci9iRUl6Wjd0aktxMVdndExFaUFyZE1PeEtzVmNIRURmT0tIRW51Zko4RUJYcWFRdTl0S1hSYjVOaWRDVTVxUgotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+type: kubernetes.io/tls
+kind: Secret
+apiVersion: v1
+
+---
+metadata:
+  name: ingress-nginx-admission
+  namespace: ingress-nginx
+  managedFields:
+    - manager: kube-webhook-certgen
+      operation: Update
+      apiVersion: v1
+      time: '2020-05-13T07:51:43Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data':
+          .: {}
+          'f:ca': {}
+          'f:cert': {}
+          'f:key': {}
+        'f:type': {}
+data:
+  ca: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJPVENCMzZBREFnRUNBaEVBN2tITU5sVDhnWmdjNnl4NlFndkhIekFLQmdncWhrak9QUVFEQWpBQU1DQVgKRFRJd01EVXhNekEzTkRZME0xb1lEekl4TWpBd05ERTVNRGMwTmpReldqQUFNRmt3RXdZSEtvWkl6ajBDQVFZSQpLb1pJemowREFRY0RRZ0FFSHBxWkx5VmtQdTh5WmNDTXgydlN3aC9ib2lNL2haUXh6ejRiSVp4L29xYmo3ZDBICjF6TkZWNVRWUldkMERVTEdLMkJiSmI0b2xDb0htd2NNdEM0b0phTTRNRFl3RGdZRFZSMFBBUUgvQkFRREFnSUUKTUJNR0ExVWRKUVFNTUFvR0NDc0dBUVVGQndNQk1BOEdBMVVkRXdFQi93UUZNQU1CQWY4d0NnWUlLb1pJemowRQpBd0lEU1FBd1JnSWhBSkl3ODlKM1JYRDFSQmdWaXhWWTFTY25RWkFTNHRkektOYWg1ZndjZFV5ckFpRUFva21CClMrdXlHUEh6SUNwb2xtWVdwYVZxblBOUXRxZHhDZU81dnBNUG5Hbz0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  cert: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJuekNDQVVhZ0F3SUJBZ0lSQU13RE0zd2FpS3FkNktrcFVxUEZ4ZzB3Q2dZSUtvWkl6ajBFQXdJd0FEQWcKRncweU1EQTFNVE13TnpRMk5ETmFHQTh5TVRJd01EUXhPVEEzTkRZME0xb3dBREJaTUJNR0J5cUdTTTQ5QWdFRwpDQ3FHU000OUF3RUhBMElBQkduTUxZazFtR3Y1VExEeHh2ZjdHbVdIREduU0hhT01DcXRTVTIyaEwxWEVUdlYyCjVIMWRTSGZKMDh3WmdEKzJuSWY1M2dWV2J3UkcrZURPdXVBMFVPcWpnWjR3Z1pzd0RnWURWUjBQQVFIL0JBUUQKQWdXZ01CTUdBMVVkSlFRTU1Bb0dDQ3NHQVFVRkJ3TUJNQXdHQTFVZEV3RUIvd1FDTUFBd1pnWURWUjBSQVFILwpCRnd3V29JaWFXNW5jbVZ6Y3kxdVoybHVlQzFqYjI1MGNtOXNiR1Z5TFdGa2JXbHpjMmx2Ym9JMGFXNW5jbVZ6CmN5MXVaMmx1ZUMxamIyNTBjbTlzYkdWeUxXRmtiV2x6YzJsdmJpNXBibWR5WlhOekxXNW5hVzU0TG5OMll6QUsKQmdncWhrak9QUVFEQWdOSEFEQkVBaUFxNEc3L0J1NGpQQ0ZpM25qS1lNWkFlNk1YQ3RSR1JKR0FKekQ2NE1yTQpnUUlnSXhWZmpmdjFCOUppWDR5eWdMU3hwUWtTMEFHZ0w2ekgrVEtHekdHQUtUZz0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  key: >-
+    LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUdqWFhweUZmYlgyYndIay9kTzFQL1BSMVFVMlpMS1lTSDVBc3J2aEhzcHdvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFYWN3dGlUV1lhL2xNc1BIRzkvc2FaWWNNYWRJZG80d0txMUpUYmFFdlZjUk85WGJrZlYxSQpkOG5UekJtQVA3YWNoL25lQlZadkJFYjU0TTY2NERSUTZnPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
+type: Opaque
+kind: Secret
+apiVersion: v1
+
+---
+metadata:
+  name: ingress-nginx-admission-token-pxb9f
+  namespace: ingress-nginx
+  annotations:
+    kubernetes.io/service-account.name: ingress-nginx-admission
+    kubernetes.io/service-account.uid: ba4dbed5-bdf0-4fbb-b34c-e972a941b129
+  managedFields:
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2020-05-13T07:51:12Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data':
+          .: {}
+          'f:ca.crt': {}
+          'f:namespace': {}
+          'f:token': {}
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:kubernetes.io/service-account.name': {}
+            'f:kubernetes.io/service-account.uid': {}
+        'f:type': {}
+data:
+  ca.crt: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJd01EUXlOakF4TVRJeE5Wb1hEVE13TURReU5EQXhNVEl4TlZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTk11CjBHd1E4T2N1TnF1WUxKNDBrdTlxU3E1cy9LYkEzVGkzVjVHU3JQUittaHg1SWQ2L1FCcVhhN1o5RVhybjJQSDMKeTJEQk5YM0ptOStTMWVEOFJZLzhFdXVGWmU0aTVpVnpIb2x1TWs5YkdxRU5CS0xHc3ZUcmJ5aGFYQktNL1kvLwpTelpBSXZ4Rmw0K0lGNzlKRXMrakNyTzh5d29Zbzd5emlrV1RvRGRtaSs3K2ptNytiU09PeURHQVNoeEs1YVhqClU0eUFEVXVMdjVDU0JDa3pqenBiVDQyalFkei9Fcll0QktxTHVYd043U2RoZktvVnkyZm4wTXRYNzBxUnM2bEkKYU15K3lGQzRaMUR2YjJTclF5UFYrV0NvREdMN3BRZ09PUmx3bnBuWWFRM2hIOS9KZi9rWEwydkVxcU9uUWtsMApRbkM4RjRwaVM5U3pHQjI4SXJVQ0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFDNmxXUENsdGRyRm9aS1QyMzFvWkF0SmxPbWgKQjFHVHVOTFRCaHdWdTdkYVFtTFQ3MHpYem5zVm5zNE9mSkduTExrYW9VUTZPN1dEdVhydDYxeENsR2FJeTZKNAoxSk1SdUF3bVpoMGMxSG1qaThvK1hEMlNydzZNRVFtaUhpck00TmN6blA5cGVacmdTQ3lsamJyREtDZm1BMzNOCnRibDVYcFRFcTF1NWlyRWIreFRrTi8wK3pkQXVZZU44Y0RhMG9oOFZOWkJOeVIvdkJJTUU4L3ZpYWkxTUZKR0YKeUtmS3dXbVVrZnlGNWVlVzlTRHYxeTB0dFhtWkFWWHVKRDJ1VjNMY2ZlMzUvczRjMjI0VXpyMmZqemxWbkIrSwowU05vQWFwUWY2SzF2Ly9zK1JoSDN0TU5zZFh4R1hBVkJGTTdtYUxaUWRMQUw4K2RqNGhQYk1BNVNITT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  namespace: aW5ncmVzcy1uZ2lueA==
+  token: >-
+    ZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNklsaEhXbmsxV0U1R1QwUjRjM0ozVTFvM01VMDNUMFpVTFVKMVoxZE9hMFE1VDNOck5qZERXR2hoTXpRaWZRLmV5SnBjM01pT2lKcmRXSmxjbTVsZEdWekwzTmxjblpwWTJWaFkyTnZkVzUwSWl3aWEzVmlaWEp1WlhSbGN5NXBieTl6WlhKMmFXTmxZV05qYjNWdWRDOXVZVzFsYzNCaFkyVWlPaUpwYm1keVpYTnpMVzVuYVc1NElpd2lhM1ZpWlhKdVpYUmxjeTVwYnk5elpYSjJhV05sWVdOamIzVnVkQzl6WldOeVpYUXVibUZ0WlNJNkltbHVaM0psYzNNdGJtZHBibmd0WVdSdGFYTnphVzl1TFhSdmEyVnVMWEI0WWpsbUlpd2lhM1ZpWlhKdVpYUmxjeTVwYnk5elpYSjJhV05sWVdOamIzVnVkQzl6WlhKMmFXTmxMV0ZqWTI5MWJuUXVibUZ0WlNJNkltbHVaM0psYzNNdGJtZHBibmd0WVdSdGFYTnphVzl1SWl3aWEzVmlaWEp1WlhSbGN5NXBieTl6WlhKMmFXTmxZV05qYjNWdWRDOXpaWEoyYVdObExXRmpZMjkxYm5RdWRXbGtJam9pWW1FMFpHSmxaRFV0WW1SbU1DMDBabUppTFdJek5HTXRaVGszTW1FNU5ERmlNVEk1SWl3aWMzVmlJam9pYzNsemRHVnRPbk5sY25acFkyVmhZMk52ZFc1ME9tbHVaM0psYzNNdGJtZHBibmc2YVc1bmNtVnpjeTF1WjJsdWVDMWhaRzFwYzNOcGIyNGlmUS5sUk9udmRQdnJSbTR6c1laanJEMDM1OW90SzZ1MTFhRzB6ZVhsY0NRXzBYYkFMNXJvVFZJVklZX2xRNlFrcGtYekJSVE9oQVhtLUJCSzFFTXk0TmUtM3I4eWhQcUI3eTVJY0RZY3dlY3EwSmJtYzJZa3h3UjZaTXJWVWpRcUsyeDNCRWtTRTdONEJZWXk4MzZReVl2cjA2eGlQTDUwd1Q5dF84R3JoamJqMGdtWFdLdnpmclVnQ3V4VkVrZ1F0amNkYk5DWjBMNUNKOURqbGpDWXVseUZxa2luT09iaElhYUloRkY1YlNOUHE1VTdyY0hxczExRjZQUHNIOFZHSjZuSHRvTDl2ZFcyRlVZNXByOEJjQVhvUDBNX3l0dlo2WGJLSlBFa21NSXMyRGdDcHpqazE1VGdKaldLS2VDZE9wRnVNYlktdVZxa3FGZDhwT213Y01qRVE=
+type: kubernetes.io/service-account-token
+kind: Secret
+apiVersion: v1
+
+---
+metadata:
+  name: ingress-nginx-token-ctn5f
+  namespace: ingress-nginx
+  annotations:
+    kubernetes.io/service-account.name: ingress-nginx
+    kubernetes.io/service-account.uid: dffbdaee-6b54-4f21-be0f-e095c9b9833d
+  managedFields:
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2020-05-13T07:51:12Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data':
+          .: {}
+          'f:ca.crt': {}
+          'f:namespace': {}
+          'f:token': {}
+        'f:metadata':
+          'f:annotations':
+            .: {}
+            'f:kubernetes.io/service-account.name': {}
+            'f:kubernetes.io/service-account.uid': {}
+        'f:type': {}
+data:
+  ca.crt: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJd01EUXlOakF4TVRJeE5Wb1hEVE13TURReU5EQXhNVEl4TlZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTk11CjBHd1E4T2N1TnF1WUxKNDBrdTlxU3E1cy9LYkEzVGkzVjVHU3JQUittaHg1SWQ2L1FCcVhhN1o5RVhybjJQSDMKeTJEQk5YM0ptOStTMWVEOFJZLzhFdXVGWmU0aTVpVnpIb2x1TWs5YkdxRU5CS0xHc3ZUcmJ5aGFYQktNL1kvLwpTelpBSXZ4Rmw0K0lGNzlKRXMrakNyTzh5d29Zbzd5emlrV1RvRGRtaSs3K2ptNytiU09PeURHQVNoeEs1YVhqClU0eUFEVXVMdjVDU0JDa3pqenBiVDQyalFkei9Fcll0QktxTHVYd043U2RoZktvVnkyZm4wTXRYNzBxUnM2bEkKYU15K3lGQzRaMUR2YjJTclF5UFYrV0NvREdMN3BRZ09PUmx3bnBuWWFRM2hIOS9KZi9rWEwydkVxcU9uUWtsMApRbkM4RjRwaVM5U3pHQjI4SXJVQ0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFDNmxXUENsdGRyRm9aS1QyMzFvWkF0SmxPbWgKQjFHVHVOTFRCaHdWdTdkYVFtTFQ3MHpYem5zVm5zNE9mSkduTExrYW9VUTZPN1dEdVhydDYxeENsR2FJeTZKNAoxSk1SdUF3bVpoMGMxSG1qaThvK1hEMlNydzZNRVFtaUhpck00TmN6blA5cGVacmdTQ3lsamJyREtDZm1BMzNOCnRibDVYcFRFcTF1NWlyRWIreFRrTi8wK3pkQXVZZU44Y0RhMG9oOFZOWkJOeVIvdkJJTUU4L3ZpYWkxTUZKR0YKeUtmS3dXbVVrZnlGNWVlVzlTRHYxeTB0dFhtWkFWWHVKRDJ1VjNMY2ZlMzUvczRjMjI0VXpyMmZqemxWbkIrSwowU05vQWFwUWY2SzF2Ly9zK1JoSDN0TU5zZFh4R1hBVkJGTTdtYUxaUWRMQUw4K2RqNGhQYk1BNVNITT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  namespace: aW5ncmVzcy1uZ2lueA==
+  token: >-
+    ZXlKaGJHY2lPaUpTVXpJMU5pSXNJbXRwWkNJNklsaEhXbmsxV0U1R1QwUjRjM0ozVTFvM01VMDNUMFpVTFVKMVoxZE9hMFE1VDNOck5qZERXR2hoTXpRaWZRLmV5SnBjM01pT2lKcmRXSmxjbTVsZEdWekwzTmxjblpwWTJWaFkyTnZkVzUwSWl3aWEzVmlaWEp1WlhSbGN5NXBieTl6WlhKMmFXTmxZV05qYjNWdWRDOXVZVzFsYzNCaFkyVWlPaUpwYm1keVpYTnpMVzVuYVc1NElpd2lhM1ZpWlhKdVpYUmxjeTVwYnk5elpYSjJhV05sWVdOamIzVnVkQzl6WldOeVpYUXVibUZ0WlNJNkltbHVaM0psYzNNdGJtZHBibmd0ZEc5clpXNHRZM1J1TldZaUxDSnJkV0psY201bGRHVnpMbWx2TDNObGNuWnBZMlZoWTJOdmRXNTBMM05sY25acFkyVXRZV05qYjNWdWRDNXVZVzFsSWpvaWFXNW5jbVZ6Y3kxdVoybHVlQ0lzSW10MVltVnlibVYwWlhNdWFXOHZjMlZ5ZG1salpXRmpZMjkxYm5RdmMyVnlkbWxqWlMxaFkyTnZkVzUwTG5WcFpDSTZJbVJtWm1Ka1lXVmxMVFppTlRRdE5HWXlNUzFpWlRCbUxXVXdPVFZqT1dJNU9ETXpaQ0lzSW5OMVlpSTZJbk41YzNSbGJUcHpaWEoyYVdObFlXTmpiM1Z1ZERwcGJtZHlaWE56TFc1bmFXNTRPbWx1WjNKbGMzTXRibWRwYm5naWZRLm10MXdDUl9Ic0RaMTVzMlNCZF9VbUVrSXFNR3FqRkstMFgwWGdYZzk2MGNsZkh4cm9La2ZaS1dhR3gzN3BjcHJyUjdhT09SRDFDeS1WTTdGYmRxNS01eWpSLVprdzBYcVEzN2Q5cG52bm50NVJKZDRhXzdFckRnTXUzbEE3ME4tZ0l5b013eE9rdEpXeXFPc2VFakQ5T0VDUEExUklhSC1EZlAxRmlWNEFnNnNUdWdhTUJhR2dHWHg4OUYxS21iMC1ySEItdUcyVzFNU2I0aFY4ZWR2bFVaLXNkXzYyX2tvczdWMjhTczVzZWxzZTBkd0xTSnN4Yzk5d241XzQ1bklWOWlGaTRSYWpPUzJ6bWlZNHZaOGZuUTFCVnNKT3p1azJJejM4QmFta0VIYXVmUmZNTm9iSGhUY21XX0NCdmh3RGN3R3BUYXl5bzgyUW5LZUEwUVF0UQ==
+type: kubernetes.io/service-account-token
+kind: Secret
+apiVersion: v1
+

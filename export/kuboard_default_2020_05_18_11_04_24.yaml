@@ -1,0 +1,87 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: face-attenance-server
+  annotations:
+    k8s.eip.work/workload: face-attenance-server
+    deployment.kubernetes.io/revision: '2'
+    k8s.eip.work/ingress: 'false'
+    k8s.eip.work/service: NodePort
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"face-attenance-server"},"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"face-attenance-server"},"name":"face-attenance-server","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"face-attenance-server"}},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"face-attenance-server"}},"spec":{"containers":[{"image":"tomcat:jdk8-openjdk","imagePullPolicy":"Always","name":"face-attenance-server","ports":[{"containerPort":8080,"protocol":"TCP"}],"volumeMounts":[{"mountPath":"/usr/local/tomcat/webapps/","name":"face-attendance-server-pv","readOnly":false}]}],"dnsConfig":{},"restartPolicy":"Always","volumes":[{"name":"face-attendance-server-pv","persistentVolumeClaim":{"claimName":"face-attendance-server-pvc"}}]}}}}
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: ''
+      k8s.eip.work/name: face-attenance-server
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: ''
+        k8s.eip.work/name: face-attenance-server
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'tomcat:jdk8-openjdk'
+          imagePullPolicy: IfNotPresent
+          name: face-attenance-server
+          volumeMounts:
+            - name: face-attendance-server-pv
+              mountPath: /usr/local/tomcat/webapps/
+          resources:
+            limits:
+            requests:
+          env: []
+          lifecycle: {}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+      volumes:
+        - name: face-attendance-server-pv
+          persistentVolumeClaim:
+            claimName: face-attendance-server-pvc
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: face-attenance-server
+  annotations:
+    k8s.eip.work/workload: face-attenance-server
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+spec:
+  selector:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: qnzra2
+      nodePort: 46771
+

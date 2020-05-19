@@ -1,0 +1,89 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: NodePort
+    k8s.eip.work/workload: face-attenance-server
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+  name: face-attenance-server
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: ''
+      k8s.eip.work/name: face-attenance-server
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: ''
+        k8s.eip.work/name: face-attenance-server
+    spec:
+      containers:
+        -
+          image: 'tomcat:jdk8-openjdk'
+          imagePullPolicy: Always
+          name: face-attenance-server
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /usr/local/tomcat/webapps/
+              name: face-attendance-server-pv
+              readOnly: false
+      dnsConfig: {}
+      restartPolicy: Always
+      volumes:
+        - name: face-attendance-server-pv
+          persistentVolumeClaim:
+            claimName: face-attendance-server-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    k8s.eip.work/workload: face-attenance-server
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+  name: face-attenance-server
+  namespace: default
+spec:
+  ports:
+    - name: manhzr
+      nodePort: .nan
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+  type: NodePort
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    k8s.eip.work/workload: face-attenance-server
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+  name: face-attenance-server
+  namespace: default
+spec:
+  rules:
+    - host: faceattendance.dev.hankutech.com
+      http:
+        paths:
+          - backend:
+              serviceName: face-attenance-server
+              servicePort: manhzr
+            path: /
+
+

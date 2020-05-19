@@ -1,0 +1,456 @@
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: example
+  name: cloud-eureka
+  annotations:
+    k8s.eip.work/workload: cloud-eureka
+    k8s.eip.work/displayName: 服务注册
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: ClusterIP
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"StatefulSet","metadata":{"annotations":{"k8s.eip.work/displayName":"服务注册","k8s.eip.work/ingress":"true","k8s.eip.work/service":"ClusterIP","k8s.eip.work/workload":"cloud-eureka"},"labels":{"k8s.eip.work/layer":"cloud","k8s.eip.work/name":"cloud-eureka"},"name":"cloud-eureka","namespace":"example"},"spec":{"replicas":1,"selector":{"matchLabels":{"k8s.eip.work/layer":"cloud","k8s.eip.work/name":"cloud-eureka"}},"serviceName":"cloud-eureka","template":{"metadata":{"labels":{"k8s.eip.work/layer":"cloud","k8s.eip.work/name":"cloud-eureka"}},"spec":{"containers":[{"env":[{"name":"CLOUD_EUREKA_DEFAULT_ZONE","value":"http://cloud-eureka-0:9200/eureka"}],"image":"eipsample/example-cloud-eureka:v1.0.0-alpha.1","imagePullPolicy":"Always","name":"cloud-eureka"}]}}}}
+  labels:
+    k8s.eip.work/layer: cloud
+    k8s.eip.work/name: cloud-eureka
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: cloud
+      k8s.eip.work/name: cloud-eureka
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: cloud
+        k8s.eip.work/name: cloud-eureka
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'eipsample/example-cloud-eureka:v1.0.0-alpha.1'
+          imagePullPolicy: Always
+          name: cloud-eureka
+          volumeMounts: []
+          resources:
+            limits:
+            requests:
+          env:
+            - name: CLOUD_EUREKA_DEFAULT_ZONE
+              value: 'http://cloud-eureka-0:9200/eureka'
+          lifecycle: {}
+      volumes: []
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options: []
+      terminationGracePeriodSeconds: 30
+  replicas: 1
+  volumeClaimTemplates: []
+  serviceName: cloud-eureka
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: example
+  name: cloud-eureka
+  annotations:
+    k8s.eip.work/workload: cloud-eureka
+    k8s.eip.work/displayName: 服务注册
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/displayName":"服务注册","k8s.eip.work/workload":"cloud-eureka"},"labels":{"k8s.eip.work/layer":"cloud","k8s.eip.work/name":"cloud-eureka"},"name":"cloud-eureka","namespace":"example"},"spec":{"ports":[{"name":"mtfsyi","nodePort":0,"port":9200,"protocol":"TCP","targetPort":9200}],"selector":{"k8s.eip.work/layer":"cloud","k8s.eip.work/name":"cloud-eureka"},"type":"ClusterIP"}}
+  labels:
+    k8s.eip.work/layer: cloud
+    k8s.eip.work/name: cloud-eureka
+spec:
+  selector:
+    k8s.eip.work/layer: cloud
+    k8s.eip.work/name: cloud-eureka
+  type: ClusterIP
+  ports:
+    - port: 9200
+      targetPort: 9200
+      protocol: TCP
+      name: mtfsyi
+      nodePort: 0
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: example
+  name: cloud-eureka
+  annotations:
+    k8s.eip.work/workload: cloud-eureka
+    k8s.eip.work/displayName: 服务注册
+  labels:
+    k8s.eip.work/layer: cloud
+    k8s.eip.work/name: cloud-eureka
+spec:
+  rules:
+    - host: cloud-eureka.dev.hankutech.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: cloud-eureka
+              servicePort: mtfsyi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: example
+  name: db-example
+  annotations:
+    k8s.eip.work/workload: db-example
+    k8s.eip.work/displayName: db-example
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'false'
+    k8s.eip.work/service: ClusterIP
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"k8s.eip.work/displayName":"db-example","k8s.eip.work/ingress":"false","k8s.eip.work/service":"ClusterIP","k8s.eip.work/workload":"db-example"},"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-example"},"name":"db-example","namespace":"example"},"spec":{"replicas":1,"selector":{"matchLabels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-example"}},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-example"}},"spec":{"containers":[{"env":[{"name":"MYSQL_ROOT_PASSWORD","value":"soqjdke4#es"}],"image":"eipsample/example-db-example:v1.0.0-alpha.1","imagePullPolicy":"Always","name":"db-example","volumeMounts":[{"mountPath":"/var/lib/mysql","name":"db-example-storage","subPath":"mysql"}]}],"volumes":[{"name":"db-example-storage","persistentVolumeClaim":{"claimName":"db-example-storage"}}]}}}}
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-example
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: db
+      k8s.eip.work/name: db-example
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: db
+        k8s.eip.work/name: db-example
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'eipsample/example-db-example:v1.0.0-alpha.1'
+          imagePullPolicy: Always
+          name: db-example
+          volumeMounts:
+            - name: db-example-storage
+              mountPath: /var/lib/mysql
+              subPath: mysql
+          resources:
+            limits:
+            requests:
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: 'soqjdke4#es'
+          lifecycle: {}
+      volumes:
+        - name: db-example-storage
+          persistentVolumeClaim:
+            claimName: db-example-storage
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options: []
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: example
+  name: db-example
+  annotations:
+    k8s.eip.work/workload: db-example
+    k8s.eip.work/displayName: db-example
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/displayName":"db-example","k8s.eip.work/workload":"db-example"},"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-example"},"name":"db-example","namespace":"example"},"spec":{"ports":[{"name":"fp6ksw","nodePort":0,"port":3306,"protocol":"TCP","targetPort":3306}],"selector":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-example"},"type":"ClusterIP"}}
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-example
+spec:
+  selector:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-example
+  type: ClusterIP
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP
+      name: fp6ksw
+      nodePort: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: example
+  name: gateway-example
+  annotations:
+    k8s.eip.work/workload: gateway-example
+    k8s.eip.work/displayName: gateway-example
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'false'
+    k8s.eip.work/service: ClusterIP
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"k8s.eip.work/displayName":"gateway-example","k8s.eip.work/ingress":"false","k8s.eip.work/service":"ClusterIP","k8s.eip.work/workload":"gateway-example"},"labels":{"k8s.eip.work/layer":"gateway","k8s.eip.work/name":"gateway-example"},"name":"gateway-example","namespace":"example"},"spec":{"replicas":1,"selector":{"matchLabels":{"k8s.eip.work/layer":"gateway","k8s.eip.work/name":"gateway-example"}},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"gateway","k8s.eip.work/name":"gateway-example"}},"spec":{"containers":[{"env":[{"name":"CLOUD_EUREKA_DEFAULT_ZONE","value":"http://cloud-eureka:9200/eureka"},{"name":"SPRING_PROFILES_ACTIVE","value":"example"}],"image":"eipsample/example-gateway-example:v1.0.0-alpha.1","imagePullPolicy":"Always","name":"gateway-example"}]}}}}
+  labels:
+    k8s.eip.work/layer: gateway
+    k8s.eip.work/name: gateway-example
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: gateway
+      k8s.eip.work/name: gateway-example
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: gateway
+        k8s.eip.work/name: gateway-example
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'eipsample/example-gateway-example:v1.0.0-alpha.1'
+          imagePullPolicy: Always
+          name: gateway-example
+          volumeMounts: []
+          resources:
+            limits:
+            requests:
+          env:
+            - name: CLOUD_EUREKA_DEFAULT_ZONE
+              value: 'http://cloud-eureka:9200/eureka'
+            - name: SPRING_PROFILES_ACTIVE
+              value: example
+          lifecycle: {}
+      volumes: []
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options: []
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: example
+  name: gateway-example
+  annotations:
+    k8s.eip.work/workload: gateway-example
+    k8s.eip.work/displayName: gateway-example
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/displayName":"gateway-example","k8s.eip.work/workload":"gateway-example"},"labels":{"k8s.eip.work/layer":"gateway","k8s.eip.work/name":"gateway-example"},"name":"gateway-example","namespace":"example"},"spec":{"ports":[{"name":"pdmd3y","nodePort":0,"port":9201,"protocol":"TCP","targetPort":9201}],"selector":{"k8s.eip.work/layer":"gateway","k8s.eip.work/name":"gateway-example"},"type":"ClusterIP"}}
+  labels:
+    k8s.eip.work/layer: gateway
+    k8s.eip.work/name: gateway-example
+spec:
+  selector:
+    k8s.eip.work/layer: gateway
+    k8s.eip.work/name: gateway-example
+  type: ClusterIP
+  ports:
+    - port: 9201
+      targetPort: 9201
+      protocol: TCP
+      name: pdmd3y
+      nodePort: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: example
+  name: svc-example
+  annotations:
+    k8s.eip.work/workload: svc-example
+    k8s.eip.work/displayName: svc-example
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'false'
+    k8s.eip.work/service: none
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"k8s.eip.work/displayName":"svc-example","k8s.eip.work/ingress":"false","k8s.eip.work/service":"none","k8s.eip.work/workload":"svc-example"},"labels":{"k8s.eip.work/layer":"svc","k8s.eip.work/name":"svc-example"},"name":"svc-example","namespace":"example"},"spec":{"replicas":1,"selector":{"matchLabels":{"k8s.eip.work/layer":"svc","k8s.eip.work/name":"svc-example"}},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"svc","k8s.eip.work/name":"svc-example"}},"spec":{"containers":[{"env":[{"name":"CLOUD_EUREKA_DEFAULT_ZONE","value":"http://cloud-eureka:9200/eureka"},{"name":"DB_EXAMPLE_URL","value":"jdbc:mysql://db-example:3306/eip_db_example?characterEncoding=utf8\u0026useSSL=false"},{"name":"DB_EXAMPLE_USERNAME","value":"eip_user"},{"name":"DB_EXAMPLE_PASSWORD","value":"1qaz2wsx"},{"name":"snowflake.dataCenterId","value":"1"},{"name":"csp.sentinel.dashboard.server","value":"monitor-sentinel"}],"image":"eipsample/example-svc-example:v1.0.0-alpha.1","imagePullPolicy":"Always","name":"svc-example"}]}}}}
+  labels:
+    k8s.eip.work/layer: svc
+    k8s.eip.work/name: svc-example
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: svc
+      k8s.eip.work/name: svc-example
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: svc
+        k8s.eip.work/name: svc-example
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'eipsample/example-svc-example:v1.0.0-alpha.1'
+          imagePullPolicy: Always
+          name: svc-example
+          volumeMounts: []
+          resources:
+            limits:
+            requests:
+          env:
+            - name: CLOUD_EUREKA_DEFAULT_ZONE
+              value: 'http://cloud-eureka:9200/eureka'
+            - name: DB_EXAMPLE_URL
+              value: >-
+                jdbc:mysql://db-example:3306/eip_db_example?characterEncoding=utf8&useSSL=false
+            - name: DB_EXAMPLE_USERNAME
+              value: eip_user
+            - name: DB_EXAMPLE_PASSWORD
+              value: 1qaz2wsx
+            - name: snowflake.dataCenterId
+              value: '1'
+            - name: csp.sentinel.dashboard.server
+              value: monitor-sentinel
+          lifecycle: {}
+      volumes: []
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options: []
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: example
+  name: web-example
+  annotations:
+    k8s.eip.work/workload: web-example
+    k8s.eip.work/displayName: web-example
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: ClusterIP
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"k8s.eip.work/displayName":"web-example","k8s.eip.work/ingress":"true","k8s.eip.work/service":"ClusterIP","k8s.eip.work/workload":"web-example"},"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-example"},"name":"web-example","namespace":"example"},"spec":{"replicas":1,"selector":{"matchLabels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-example"}},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-example"}},"spec":{"containers":[{"image":"eipsample/example-web-example:v1.0.0-alpha.1","imagePullPolicy":"Always","name":"web-example"}]}}}}
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-example
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: web
+      k8s.eip.work/name: web-example
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: web
+        k8s.eip.work/name: web-example
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'eipsample/example-web-example:v1.0.0-alpha.1'
+          imagePullPolicy: Always
+          name: web-example
+          volumeMounts: []
+          resources:
+            limits:
+            requests:
+          env: []
+          lifecycle: {}
+      volumes: []
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options: []
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: example
+  name: web-example
+  annotations:
+    k8s.eip.work/workload: web-example
+    k8s.eip.work/displayName: web-example
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/displayName":"web-example","k8s.eip.work/workload":"web-example"},"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-example"},"name":"web-example","namespace":"example"},"spec":{"ports":[{"name":"mawfrp","nodePort":0,"port":80,"protocol":"TCP","targetPort":80}],"selector":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-example"},"type":"ClusterIP"}}
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-example
+spec:
+  selector:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-example
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: mawfrp
+      nodePort: 0
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: example
+  name: web-example
+  annotations:
+    k8s.eip.work/workload: web-example
+    k8s.eip.work/displayName: web-example
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-example
+spec:
+  rules:
+    - host: web-example.dev.hankutech.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: web-example
+              servicePort: mawfrp
+

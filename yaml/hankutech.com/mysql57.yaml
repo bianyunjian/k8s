@@ -1,0 +1,107 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: NodePort
+    k8s.eip.work/workload: db-mysql57
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-mysql57
+  name: db-mysql57
+  namespace: dev
+  resourceVersion: '3019738'
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: db
+      k8s.eip.work/name: db-mysql57
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: db
+        k8s.eip.work/name: db-mysql57
+    spec:
+      containers:
+        -
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: Mysql-2019
+          image: 'mysql:5.7'
+          imagePullPolicy: IfNotPresent
+          name: mysql57
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-pv
+              readOnly: false
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: mysql-pv
+          persistentVolumeClaim:
+            claimName: mysql
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    k8s.eip.work/workload: db-mysql57
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-mysql57
+  name: db-mysql57
+  namespace: dev
+  resourceVersion: '3019200'
+spec:
+  clusterIP: 10.96.156.230
+  ports:
+    - name: jciqtp
+      nodePort: 12321
+      port: 80
+      protocol: TCP
+      targetPort: 3306
+  selector:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-mysql57
+  type: NodePort
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    k8s.eip.work/workload: db-mysql57
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-mysql57
+  name: db-mysql57
+  namespace: dev
+spec:
+  rules:
+    - host: mysql.dev.hankutech.com
+      http:
+        paths:
+          - backend:
+              serviceName: db-mysql57
+              servicePort: jciqtp
+            path: /
+
+

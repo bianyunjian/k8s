@@ -1,0 +1,524 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: dev
+  name: db-mysql57
+  annotations:
+    k8s.eip.work/workload: db-mysql57
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'false'
+    k8s.eip.work/service: NodePort
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"deployment.kubernetes.io/revision":"1","k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"db-mysql57"},"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-mysql57"},"name":"db-mysql57","namespace":"dev","resourceVersion":"3019738"},"spec":{"progressDeadlineSeconds":600,"replicas":1,"revisionHistoryLimit":10,"selector":{"matchLabels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-mysql57"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-mysql57"}},"spec":{"containers":[{"env":[{"name":"MYSQL_ROOT_PASSWORD","value":"Mysql-2019"}],"image":"mysql:5.7","imagePullPolicy":"IfNotPresent","name":"mysql57","ports":[{"containerPort":3306,"protocol":"TCP"}],"resources":{"limits":{},"requests":{}},"volumeMounts":[{"mountPath":"/var/lib/mysql","name":"mysql-pv","readOnly":false}]}],"dnsPolicy":"ClusterFirst","restartPolicy":"Always","terminationGracePeriodSeconds":30,"volumes":[{"name":"mysql-pv","persistentVolumeClaim":{"claimName":"mysql"}}]}}}}
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-mysql57
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: db
+      k8s.eip.work/name: db-mysql57
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: db
+        k8s.eip.work/name: db-mysql57
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'mysql:5.7'
+          imagePullPolicy: IfNotPresent
+          name: mysql57
+          volumeMounts:
+            - name: mysql-pv
+              mountPath: /var/lib/mysql
+            - name: mysqld-config
+              mountPath: /etc/mysql/mysql.conf.d
+          resources:
+            limits:
+            requests:
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: Mysql-2019
+          lifecycle: {}
+          ports:
+            - hostPort: 3306
+              containerPort: 3306
+              protocol: TCP
+      volumes:
+        - name: mysql-pv
+          persistentVolumeClaim:
+            claimName: mysql
+        - name: mysqld-config
+          configMap:
+            name: mysql57-mysqld-config
+            defaultMode: 420
+            items: []
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      nodeName: techserver02
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dev
+  name: db-mysql57
+  annotations:
+    k8s.eip.work/workload: db-mysql57
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/workload":"db-mysql57"},"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-mysql57"},"name":"db-mysql57","namespace":"dev","resourceVersion":"3019200"},"spec":{"clusterIP":"10.96.156.230","ports":[{"name":"jciqtp","nodePort":12321,"port":80,"protocol":"TCP","targetPort":3306}],"selector":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-mysql57"},"type":"NodePort"}}
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-mysql57
+spec:
+  selector:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-mysql57
+  type: NodePort
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP
+      name: jciqtp
+      nodePort: 12321
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: dev
+  name: db-phpmyadmin
+  annotations:
+    k8s.eip.work/workload: db-phpmyadmin
+    deployment.kubernetes.io/revision: '6'
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: NodePort
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"deployment.kubernetes.io/revision":"6","k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"db-phpmyadmin"},"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-phpmyadmin"},"name":"db-phpmyadmin","namespace":"dev","resourceVersion":"3046112"},"spec":{"progressDeadlineSeconds":600,"replicas":1,"revisionHistoryLimit":10,"selector":{"matchLabels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-phpmyadmin"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-phpmyadmin"}},"spec":{"containers":[{"env":[{"name":"PMA_HOST","value":"10.96.156.230"},{"name":"PMA_PORT","value":"3306"}],"image":"phpmyadmin/phpmyadmin","imagePullPolicy":"IfNotPresent","name":"phpmyadmin","ports":[{"containerPort":80,"protocol":"TCP"}],"resources":{"limits":{},"requests":{}}}],"dnsPolicy":"ClusterFirst","restartPolicy":"Always","terminationGracePeriodSeconds":30}}}}
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-phpmyadmin
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: db
+      k8s.eip.work/name: db-phpmyadmin
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: db
+        k8s.eip.work/name: db-phpmyadmin
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: phpmyadmin/phpmyadmin
+          imagePullPolicy: IfNotPresent
+          name: phpmyadmin
+          volumeMounts: []
+          resources:
+            limits:
+            requests:
+          env:
+            - name: PMA_HOST
+              value: 10.96.156.230
+            - name: PMA_PORT
+              value: '3306'
+          lifecycle: {}
+          ports:
+            - containerPort: 80
+              protocol: TCP
+      volumes: []
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dev
+  name: db-phpmyadmin
+  annotations:
+    k8s.eip.work/workload: db-phpmyadmin
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/workload":"db-phpmyadmin"},"labels":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-phpmyadmin"},"name":"db-phpmyadmin","namespace":"dev","resourceVersion":"3046073"},"spec":{"clusterIP":"10.96.248.218","ports":[{"name":"3a4yqt","nodePort":30730,"port":80,"protocol":"TCP","targetPort":80}],"selector":{"k8s.eip.work/layer":"db","k8s.eip.work/name":"db-phpmyadmin"},"type":"NodePort"}}
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-phpmyadmin
+spec:
+  selector:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-phpmyadmin
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: 3a4yqt
+      nodePort: 30730
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: dev
+  name: db-phpmyadmin
+  annotations:
+    k8s.eip.work/workload: db-phpmyadmin
+  labels:
+    k8s.eip.work/layer: db
+    k8s.eip.work/name: db-phpmyadmin
+spec:
+  rules:
+    - host: myadmin.dev.hankutech.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: db-phpmyadmin
+              servicePort: 3a4yqt
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  namespace: dev
+  name: nexus3
+  annotations:
+    k8s.eip.work/workload: nexus3
+    deprecated.daemonset.template.generation: '2'
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: NodePort
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"DaemonSet","metadata":{"annotations":{"deprecated.daemonset.template.generation":"2","k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"nexus3"},"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"},"name":"nexus3","namespace":"dev","resourceVersion":"2783403"},"spec":{"revisionHistoryLimit":10,"selector":{"matchLabels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"}},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"}},"spec":{"containers":[{"image":"sonatype/nexus3:latest","imagePullPolicy":"IfNotPresent","name":"nexus3","ports":[{"containerPort":8081,"protocol":"TCP"}],"resources":{"limits":{},"requests":{}},"volumeMounts":[{"mountPath":"/nexus-data","name":"nexus-pv","readOnly":false}]}],"dnsPolicy":"ClusterFirst","nodeSelector":{"worknode":"local-dev-245"},"restartPolicy":"Always","terminationGracePeriodSeconds":30,"volumes":[{"name":"nexus-pv","persistentVolumeClaim":{"claimName":"nexus"}}]}}}}
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: nexus3
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: ''
+      k8s.eip.work/name: nexus3
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: ''
+        k8s.eip.work/name: nexus3
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'sonatype/nexus3:latest'
+          imagePullPolicy: IfNotPresent
+          name: nexus3
+          volumeMounts:
+            - name: nexus-pv
+              mountPath: /nexus-data
+          resources:
+            limits:
+            requests:
+          env: []
+          lifecycle: {}
+          ports:
+            - containerPort: 8081
+              protocol: TCP
+      volumes:
+        - name: nexus-pv
+          persistentVolumeClaim:
+            claimName: nexus
+      dnsPolicy: ClusterFirst
+      dnsConfig:
+        options: []
+      nodeSelector:
+        worknode: local-dev-245
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dev
+  name: nexus3
+  annotations:
+    k8s.eip.work/workload: nexus3
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/workload":"nexus3"},"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"},"name":"nexus3","namespace":"dev","resourceVersion":"2783377"},"spec":{"clusterIP":"10.96.65.7","ports":[{"name":"zqinx6","nodePort":3600,"port":8081,"protocol":"TCP","targetPort":8081}],"selector":{"k8s.eip.work/layer":"","k8s.eip.work/name":"nexus3"},"type":"NodePort"}}
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: nexus3
+spec:
+  selector:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: nexus3
+  type: NodePort
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: zqinx6
+      nodePort: 3600
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: dev
+  name: nexus3
+  annotations:
+    k8s.eip.work/workload: nexus3
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: nexus3
+spec:
+  rules:
+    - host: nexus3.dev.hankutech.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: nexus3
+              servicePort: zqinx6
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: dev
+  name: web-portal
+  annotations:
+    k8s.eip.work/workload: web-portal
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: NodePort
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"deployment.kubernetes.io/revision":"1","k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"web-portal"},"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"},"name":"web-portal","namespace":"dev","resourceVersion":"3012919"},"spec":{"progressDeadlineSeconds":600,"replicas":1,"revisionHistoryLimit":10,"selector":{"matchLabels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"}},"spec":{"containers":[{"image":"nginx:1.17","imagePullPolicy":"IfNotPresent","name":"portal","ports":[{"containerPort":80,"protocol":"TCP"}],"resources":{"limits":{},"requests":{}},"volumeMounts":[{"mountPath":"/etc/nginx/conf.d","name":"portal-pv","readOnly":false},{"mountPath":"/portal-data","name":"portal-pv","readOnly":false}]}],"dnsConfig":{},"dnsPolicy":"ClusterFirst","restartPolicy":"Always","terminationGracePeriodSeconds":30,"volumes":[{"name":"portal-pv","persistentVolumeClaim":{"claimName":"portal"}}]}}}}
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-portal
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: web
+      k8s.eip.work/name: web-portal
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: web
+        k8s.eip.work/name: web-portal
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'nginx:1.17'
+          imagePullPolicy: IfNotPresent
+          name: portal
+          volumeMounts:
+            - name: portal-pv
+              mountPath: /etc/nginx/conf.d
+            - name: portal-pv
+              mountPath: /portal-data
+          resources:
+            limits:
+            requests:
+          env: []
+          lifecycle: {}
+          ports:
+            - containerPort: 80
+              protocol: TCP
+      volumes:
+        - name: portal-pv
+          persistentVolumeClaim:
+            claimName: portal
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dev
+  name: web-portal
+  annotations:
+    k8s.eip.work/workload: web-portal
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/workload":"web-portal"},"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"},"name":"web-portal","namespace":"dev","resourceVersion":"3012895"},"spec":{"clusterIP":"10.96.74.173","ports":[{"name":"xydx8n","nodePort":32840,"port":80,"protocol":"TCP","targetPort":80}],"selector":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"},"type":"NodePort"}}
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-portal
+spec:
+  selector:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-portal
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: xydx8n
+      nodePort: 32840
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: dev
+  name: web-portal
+  annotations:
+    k8s.eip.work/workload: web-portal
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-portal
+spec:
+  rules:
+    - host: portal.dev.hankutech.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: web-portal
+              servicePort: xydx8n
+    - host: dev.hankutech.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: web-portal
+              servicePort: xydx8n
+
+---
+metadata:
+  name: mysql57-mysqld-config
+  namespace: dev
+  managedFields:
+    - manager: Mozilla
+      operation: Update
+      apiVersion: v1
+      time: '2020-05-14T06:48:47Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data':
+          .: {}
+          'f:mysqld.cnf': {}
+data:
+  mysqld.cnf: >-
+    # Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights
+    reserved.
+
+    #
+
+    # This program is free software; you can redistribute it and/or modify
+
+    # it under the terms of the GNU General Public License, version 2.0,
+
+    # as published by the Free Software Foundation.
+
+    #
+
+    # This program is also distributed with certain software (including
+
+    # but not limited to OpenSSL) that is licensed under separate terms,
+
+    # as designated in a particular file or component or in included license
+
+    # documentation.  The authors of MySQL hereby grant you an additional
+
+    # permission to link the program and your derivative works with the
+
+    # separately licensed software that they have included with MySQL.
+
+    #
+
+    # This program is distributed in the hope that it will be useful,
+
+    # but WITHOUT ANY WARRANTY; without even the implied warranty of
+
+    # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+
+    # GNU General Public License, version 2.0, for more details.
+
+    #
+
+    # You should have received a copy of the GNU General Public License
+
+    # along with this program; if not, write to the Free Software
+
+    # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+
+
+    #
+
+    # The MySQL  Server configuration file.
+
+    #
+
+    # For explanations see
+
+    # http://dev.mysql.com/doc/mysql/en/server-system-variables.html
+
+
+    [mysqld]
+
+    pid-file        = /var/run/mysqld/mysqld.pid
+
+    socket          = /var/run/mysqld/mysqld.sock
+
+    datadir         = /var/lib/mysql
+
+    #log-error      = /var/log/mysql/error.log
+
+    # By default we only accept connections from localhost
+
+    #bind-address   = 127.0.0.1
+
+    # Disabling symbolic-links is recommended to prevent assorted security risks
+
+    symbolic-links=0 
+
+    lower_case_table_names = 1
+kind: ConfigMap
+apiVersion: v1
+

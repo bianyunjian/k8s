@@ -1,0 +1,120 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: NodePort
+    k8s.eip.work/workload: web-portal
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"deployment.kubernetes.io/revision":"6","k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"web-portal"},"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"},"name":"web-portal","namespace":"dev","resourceVersion":"3012497"},"spec":{"progressDeadlineSeconds":600,"replicas":1,"revisionHistoryLimit":10,"selector":{"matchLabels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"}},"spec":{"containers":[{"image":"nginx:1.17","imagePullPolicy":"IfNotPresent","name":"portal","ports":[{"containerPort":80,"protocol":"TCP"}],"resources":{"limits":{},"requests":{}},"volumeMounts":[{"mountPath":"/etc/nginx/conf.d","name":"portal-pv","readOnly":false},{"mountPath":"/portal-data","name":"portal-pv","readOnly":false}]}],"dnsPolicy":"ClusterFirst","restartPolicy":"Always","terminationGracePeriodSeconds":30,"volumes":[{"name":"portal-pv","persistentVolumeClaim":{"claimName":"portal"}}]}}}}
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-portal
+  name: web-portal
+  namespace: dev
+  resourceVersion: '3012919'
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: web
+      k8s.eip.work/name: web-portal
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: web
+        k8s.eip.work/name: web-portal
+    spec:
+      containers:
+        -
+          image: 'nginx:1.17'
+          imagePullPolicy: IfNotPresent
+          name: portal
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+            limits: {}
+            requests: {}
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d
+              name: portal-pv
+              readOnly: false
+            - mountPath: /portal-data
+              name: portal-pv
+              readOnly: false
+      dnsConfig: {}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: portal-pv
+          persistentVolumeClaim:
+            claimName: portal
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    k8s.eip.work/workload: web-portal
+    kubectl.kubernetes.io/last-applied-configuration: >-
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"k8s.eip.work/workload":"web-portal"},"labels":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"},"name":"web-portal","namespace":"dev","resourceVersion":"3007029"},"spec":{"clusterIP":"10.96.74.173","ports":[{"name":"xydx8n","nodePort":32840,"port":80,"protocol":"TCP","targetPort":80}],"selector":{"k8s.eip.work/layer":"web","k8s.eip.work/name":"web-portal"},"type":"NodePort"}}
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-portal
+  name: web-portal
+  namespace: dev
+  resourceVersion: '3012895'
+spec:
+  clusterIP: 10.96.74.173
+  ports:
+    - name: xydx8n
+      nodePort: 32840
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-portal
+  type: NodePort
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    k8s.eip.work/workload: web-portal
+  labels:
+    k8s.eip.work/layer: web
+    k8s.eip.work/name: web-portal
+  name: web-portal
+  namespace: dev
+  resourceVersion: '3012998'
+spec:
+  rules:
+    - host: portal.dev.hankutech.com
+      http:
+        paths:
+          - backend:
+              serviceName: web-portal
+              servicePort: xydx8n
+            path: /
+    - host: dev.hankutech.com
+      http:
+        paths:
+          - backend:
+              serviceName: web-portal
+              servicePort: xydx8n
+            path: /
+
+
