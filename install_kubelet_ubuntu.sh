@@ -19,6 +19,9 @@ sudo apt-get -y install apt-transport-https ca-certificates curl software-proper
 curl -fsSL http://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
 # Step 3: 写入软件源信息
 sudo add-apt-repository "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
+
+#如果是arm64架构使用：
+# sudo add-apt-repository "deb [arch=amd64] http://mirrors.aliyun.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
 # Step 4: 更新并安装 Docker-CE
 sudo apt-get -y update
 sudo apt-get -y install docker-ce=5:19.03.8~3-0~ubuntu-bionic
@@ -67,18 +70,18 @@ echo "net.ipv6.conf.all.forwarding = 1"  >> /etc/sysctl.conf
 sysctl -p
 
 # 配置K8S的apt源
-cat <<EOF | sudo tee /etc/apt/sources.list
+ 
 # 系统安装源
-deb http://mirrors.aliyun.com/ubuntu/ xenial main restricted
-deb http://mirrors.aliyun.com/ubuntu/ xenial-updates main restricted
-deb http://mirrors.aliyun.com/ubuntu/ xenial universe
-deb http://mirrors.aliyun.com/ubuntu/ xenial-updates universe
-deb http://mirrors.aliyun.com/ubuntu/ xenial multiverse
-deb http://mirrors.aliyun.com/ubuntu/ xenial-updates multiverse
-deb http://mirrors.aliyun.com/ubuntu/ xenial-backports main restricted universe multiverse
+#deb http://mirrors.aliyun.com/ubuntu/ xenial main restricted
+#deb http://mirrors.aliyun.com/ubuntu/ xenial-updates main restricted
+#deb http://mirrors.aliyun.com/ubuntu/ xenial universe
+#deb http://mirrors.aliyun.com/ubuntu/ xenial-updates universe
+#deb http://mirrors.aliyun.com/ubuntu/ xenial multiverse
+#deb http://mirrors.aliyun.com/ubuntu/ xenial-updates multiverse
+#deb http://mirrors.aliyun.com/ubuntu/ xenial-backports main restricted universe multiverse
 # kubeadm及kubernetes组件安装源
-deb https://mirrors.aliyun.com/kubernetes/apt kubernetes-xenial main
-EOF
+echo "deb https://mirrors.aliyun.com/kubernetes/apt kubernetes-xenial main" >> /etc/apt/sources.list
+ 
 
 #更新
 apt-get update -y

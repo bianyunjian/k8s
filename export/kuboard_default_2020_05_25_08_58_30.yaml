@@ -1,0 +1,169 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: busybox
+  annotations:
+    k8s.eip.work/workload: busybox
+    deployment.kubernetes.io/revision: '3'
+    k8s.eip.work/ingress: 'false'
+    k8s.eip.work/service: none
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: busybox
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: ''
+      k8s.eip.work/name: busybox
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: ''
+        k8s.eip.work/name: busybox
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'busybox:1.28.4'
+          imagePullPolicy: IfNotPresent
+          name: busybox
+          volumeMounts: []
+          command:
+            - sleep
+            - '3600'
+          resources:
+            limits:
+            requests:
+          env: []
+          lifecycle: {}
+      volumes: []
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      nodeName: workernode72
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: face-attenance-server
+  annotations:
+    k8s.eip.work/workload: face-attenance-server
+    deployment.kubernetes.io/revision: '3'
+    k8s.eip.work/ingress: 'true'
+    k8s.eip.work/service: NodePort
+    kubectl.kubernetes.io/last-applied-configuration: >
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"k8s.eip.work/ingress":"true","k8s.eip.work/service":"NodePort","k8s.eip.work/workload":"face-attenance-server"},"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"face-attenance-server"},"name":"face-attenance-server","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"face-attenance-server"}},"template":{"metadata":{"labels":{"k8s.eip.work/layer":"","k8s.eip.work/name":"face-attenance-server"}},"spec":{"containers":[{"image":"tomcat:jdk8-openjdk","imagePullPolicy":"Always","name":"face-attenance-server","ports":[{"containerPort":8080,"protocol":"TCP"}],"volumeMounts":[{"mountPath":"/usr/local/tomcat/webapps/","name":"face-attendance-server-pv","readOnly":false}]}],"dnsConfig":{},"restartPolicy":"Always","volumes":[{"name":"face-attendance-server-pv","persistentVolumeClaim":{"claimName":"face-attendance-server-pvc"}}]}}}}
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+spec:
+  selector:
+    matchLabels:
+      k8s.eip.work/layer: ''
+      k8s.eip.work/name: face-attenance-server
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.eip.work/layer: ''
+        k8s.eip.work/name: face-attenance-server
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: 'tomcat:jdk8-openjdk'
+          imagePullPolicy: Always
+          name: face-attenance-server
+          volumeMounts:
+            - name: face-attendance-server-data
+              mountPath: /usr/local/tomcat/webapps/
+          resources:
+            limits:
+              cpu: 200m
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 512Mi
+          env: []
+          lifecycle: {}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+      volumes:
+        - name: face-attendance-server-data
+          persistentVolumeClaim:
+            claimName: face-attendence-pvc
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: face-attenance-server
+  annotations:
+    k8s.eip.work/workload: face-attenance-server
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+spec:
+  selector:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: kwit7j
+      nodePort: 15026
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: default
+  name: face-attenance-server
+  annotations:
+    k8s.eip.work/workload: face-attenance-server
+  labels:
+    k8s.eip.work/layer: ''
+    k8s.eip.work/name: face-attenance-server
+spec:
+  rules:
+    - host: faceattendance.dev.hankutech.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: face-attenance-server
+              servicePort: kwit7j
+
