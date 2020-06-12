@@ -1,0 +1,29 @@
+
+1. nfs-client-provision 
+NFS存储类不建议作大规模存储，块存储建议采用CEPH（独立安装）
+
+NFS只作为外接存储与普通NGINX类的配置文件，业务配置文件建议走配置中心。
+
+增加自定义商店
+
+地址为：https://github.com/helm/charts.git 分支：master, 版本： Helm3， 使用范围： global
+
+点击要安装的集群（等10分钟 左右，看网速）
+
+搜索nfs-client-provision 安装
+
+安装时增加两个变量
+
+例如外部nfsserver 是 192.168.115.34:/data
+
+在应答中设置
+nfs.server = 192.168.115.34
+nfs.path = /data/nfs/harbor
+
+注意设置 nfs-client-provisioner 运行的节点
+
+
+2. 创建存储类StorageClass
+
+3. 创建持久卷PVC
+

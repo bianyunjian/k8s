@@ -1,3 +1,10 @@
+环境准备：
+sudo apt install -y vim
+sudo apt install -y curl
+sudo apt install -y wget
+sudo apt install -y nfs-common
+
+
 1.安装 Docker 环境
 sudo vim  /etc/apt/sources.list
 ## 末尾添加以下源

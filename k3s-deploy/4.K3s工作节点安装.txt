@@ -1,3 +1,9 @@
+环境准备：
+sudo apt install -y vim
+sudo apt install -y curl
+sudo apt install -y wget
+sudo apt install -y nfs-common
+
 1.安装 Docker 环境
 sudo vim  /etc/apt/sources.list
 ## 末尾添加以下源
@@ -9,6 +15,8 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 
 sudo apt update
 sudo apt-get install docker-ce
+sudo docker version
+
 
 2.  
 
@@ -18,8 +26,7 @@ sudo apt-get install docker-ce
 
 使用安装脚本+参数：
 export K3S_URL=https://172.16.114.72:6443 
-export K3S_TOKEN=K106778ca1f48aa6e990554651f89ac21da4a1669153c01cf82950c6d0a6daf8614::server:b6cf3b5ccc68adb487d9be4a9dab51c2
-
+export K3S_TOKEN=K1017978489585cf8b23332f0b065d0154c8e419d75846b90190965152824301cf0::server:9c1c0bcd21455c55fdbad809225e834a
 sh k3s_install.sh
 
  
