@@ -1,0 +1,52 @@
+1.  在Rancher Server 中的应用商店
+选择安装 Harbor 
+设置注意：
+Harbor的密码 设置为默认： Harbor12345
+采用ingress方式， 设置域名 core.harbor.k3s.com ，notary.harbor.k3s.com
+采用filesystem存储方式
+选择 存储类 为  nfs-client-harbor
+
+
+
+
+2.  进入Harbor网站
+https://core.harbor.k3s.com/
+查看默认项目 library
+创建新的用户 docker ， 密码Docker12345
+将新用户添加到默认项目 library中
+
+
+3. 使用命令行测试docker从Harbor拉取镜像
+docker login https://core.harbor.k3s.com 
+这里会遇到https证书错误的问题 x509: certificate signed by unknown authority
+--解决办法：  
+# 获取证书
+echo -n | openssl s_client -showcerts -connect core.harbor.k3s.com:443 2>/dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > ./harbor.crt
+# 复制到系统位置
+sudo cp ./harbor.crt /usr/local/share/ca-certificates/harbor.crt  
+# 更新系统证书
+sudo update-ca-certificates 
+# 重启docker
+sudo systemctl restart docker
+上面的core.harbor.k3s.com是docker提示证书错误的网址。把这个网址替换，同时把改下生成的证书名字
+
+
+测试推送一个镜像,然后再拉取
+docker pull busybox:latest
+docker tag  busybox:latest core.harbor.k3s.com/library/busybox:latest
+docker push core.harbor.k3s.com/library/busybox:latest
+docker rmi core.harbor.k3s.com/library/busybox:latest
+docker pull core.harbor.k3s.com/library/busybox:latest
+docker images |grep busybox
+
+
+
+4. Rancher Server 从Harbor拉取镜像
+Kubernetes通过Secret配置连接Harbor私有仓库
+在Rancher的界面上能看到一个按钮【执行kubectl命令行】
+kubectl create secret docker-registry secret-name --namespace=default \
+--docker-server=http://harbor.dev.hankutech.com:5000 --docker-username=pusher \
+--docker-password=Pusher12345 --docker-email=1@1.com
+
+
+
