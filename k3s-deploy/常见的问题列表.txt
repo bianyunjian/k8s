@@ -1,5 +1,6 @@
 -----如何卸载k3s--------------
 卸载脚本默认在 /usr/local/bin/k3s-uninstall.sh
+卸载脚本默认在 /usr/local/bin/k3s-agent-uninstall.sh
 执行该脚本可以删除k3s
 
 
