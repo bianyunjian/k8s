@@ -21,7 +21,15 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo apt update
 sudo apt-get install -y docker-ce
 sudo docker version
-
+配置 Docker 镜像站
+sudo vim /etc/docker/daemon.json
+添加：
+{
+	"registry-mirrors": ["https://f8vzefnx.mirror.aliyuncs.com"]
+}
+重启Docker后使docker的配置文件生效
+sudo systemctl daemon-reload
+sudo systemctl restart docker
 
 #2.工作节点：
 
@@ -45,6 +53,7 @@ sudo /usr/local/bin/k3s-agent-uninstall.sh
 export K3S_URL=https://172.16.114.72:6443 
 export K3S_TOKEN=K1017978489585cf8b23332f0b065d0154c8e419d75846b90190965152824301cf0::server:9c1c0bcd21455c55fdbad809225e834a
 export INSTALL_K3S_EXEC="--docker --no-deploy traefik"
+export INSTALL_K3S_VERSION=""
 sh k3s_install.sh
 
 

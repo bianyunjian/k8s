@@ -21,7 +21,7 @@ docker version
 sudo vim /etc/docker/daemon.json
 添加：
 {
-	"registry-mirrors": ["https://registry.docker-cn.com"]
+	"registry-mirrors": ["https://f8vzefnx.mirror.aliyuncs.com"]
 }
 重启Docker后使docker的配置文件生效
 sudo systemctl daemon-reload
@@ -43,8 +43,8 @@ chmod +x /usr/local/bin/k3s
 修改K3S服务的配置文件：
 vim /etc/systemd/system/multi-user.target.wants/k3s.service
 需要修改ExecStart的值，将其修改为：
-/usr/local/bin/k3s server --docker --no-deploy traefik
-
+/usr/local/bin/k3s server --docker
+#/usr/local/bin/k3s server --docker --no-deploy traefik
 保存退出，执行命令重新加载新的服务配置文件：systemctl daemon-reload
 重启K3S服务：  service k3s restart
 通过命令确认K3S集群是否就绪：  k3s kubectl get node
