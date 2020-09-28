@@ -1,0 +1,727 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: cloud-eureka-server
+  annotations:
+    k8s.kuboard.cn/workload: cloud-eureka-server
+    deployment.kubernetes.io/revision: '25'
+    k8s.kuboard.cn/ingress: 'true'
+    k8s.kuboard.cn/service: ClusterIP
+  labels:
+    k8s.kuboard.cn/layer: cloud
+    k8s.kuboard.cn/name: cloud-eureka-server
+spec:
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/layer: cloud
+      k8s.kuboard.cn/name: cloud-eureka-server
+  revisionHistoryLimit: 3
+  template:
+    metadata:
+      labels:
+        k8s.kuboard.cn/layer: cloud
+        k8s.kuboard.cn/name: cloud-eureka-server
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers:
+        - image: '172.16.114.245:5000/dev/skywalking-agent:latest'
+          imagePullPolicy: Always
+          name: skywalking-agent
+          volumeMounts:
+            - name: agent
+              mountPath: /skywalking/agent
+          command:
+            - sh
+            - '-c'
+            - >-
+              set -ex;mkdir -p /skywalking/agent;cp -r /opt/skywalking/agent/*
+              /skywalking/agent;
+          resources:
+            limits:
+            requests:
+          env: []
+      containers:
+        - image: '172.16.114.245:5000/ezml/eureka-server:v202007161800'
+          imagePullPolicy: IfNotPresent
+          name: eureka-server
+          volumeMounts:
+            - name: agent
+              mountPath: /opt/skywalking/agent
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+          env: []
+          envFrom:
+            - configMapRef:
+                name: common-config
+          lifecycle: {}
+      volumes:
+        - name: agent
+          emptyDir: {}
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      nodeName: dev-master-node
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: cloud-eureka-server
+  annotations:
+    k8s.kuboard.cn/workload: cloud-eureka-server
+  labels:
+    k8s.kuboard.cn/layer: cloud
+    k8s.kuboard.cn/name: cloud-eureka-server
+spec:
+  selector:
+    k8s.kuboard.cn/layer: cloud
+    k8s.kuboard.cn/name: cloud-eureka-server
+  type: ClusterIP
+  ports:
+    - port: 19101
+      targetPort: 9100
+      protocol: TCP
+      name: eureka-svc
+      nodePort: 0
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: default
+  name: cloud-eureka-server
+  annotations:
+    k8s.kuboard.cn/workload: cloud-eureka-server
+    traefik.frontend.rule.type: PathPrefixStrip
+  labels:
+    k8s.kuboard.cn/layer: cloud
+    k8s.kuboard.cn/name: cloud-eureka-server
+spec:
+  rules:
+    - host: eureka.k3s.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: cloud-eureka-server
+              servicePort: eureka-svc
+          - path: /svcUser
+            backend:
+              serviceName: svc-user-service
+              servicePort: user-service
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: gateway-springcloud-gateway
+  annotations:
+    k8s.kuboard.cn/workload: gateway-springcloud-gateway
+    deployment.kubernetes.io/revision: '25'
+    k8s.kuboard.cn/ingress: 'true'
+    k8s.kuboard.cn/service: NodePort
+  labels:
+    k8s.kuboard.cn/layer: gateway
+    k8s.kuboard.cn/name: gateway-springcloud-gateway
+spec:
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/layer: gateway
+      k8s.kuboard.cn/name: gateway-springcloud-gateway
+  revisionHistoryLimit: 2
+  template:
+    metadata:
+      labels:
+        k8s.kuboard.cn/layer: gateway
+        k8s.kuboard.cn/name: gateway-springcloud-gateway
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers:
+        - image: '172.16.114.245:5000/dev/skywalking-agent:latest'
+          imagePullPolicy: Always
+          name: skywalking-agent
+          volumeMounts:
+            - name: agent
+              mountPath: /skywalking/agent
+          command:
+            - sh
+            - '-c'
+            - >-
+              set -ex;mkdir -p /skywalking/agent;cp -r /opt/skywalking/agent/*
+              /skywalking/agent;cp -r /opt/skywalking/agent/optional-plugins/*
+              /skywalking/agent/plugins;
+          resources:
+            limits:
+            requests:
+          env: []
+      containers:
+        - image: '172.16.114.245:5000/ezml/gateway:v202007161800'
+          imagePullPolicy: IfNotPresent
+          name: gateway
+          volumeMounts:
+            - name: agent
+              mountPath: /opt/skywalking/agent
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+          env: []
+          envFrom:
+            - configMapRef:
+                name: common-config
+          lifecycle: {}
+      volumes:
+        - name: agent
+          emptyDir: {}
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      nodeName: dev-master-node
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: gateway-springcloud-gateway
+  annotations:
+    k8s.kuboard.cn/workload: gateway-springcloud-gateway
+  labels:
+    k8s.kuboard.cn/layer: gateway
+    k8s.kuboard.cn/name: gateway-springcloud-gateway
+spec:
+  selector:
+    k8s.kuboard.cn/layer: gateway
+    k8s.kuboard.cn/name: gateway-springcloud-gateway
+  type: NodePort
+  ports:
+    - port: 19102
+      targetPort: 9100
+      protocol: TCP
+      name: kdayea
+      nodePort: 30352
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: default
+  name: gateway-springcloud-gateway
+  annotations:
+    k8s.kuboard.cn/workload: gateway-springcloud-gateway
+  labels:
+    k8s.kuboard.cn/layer: gateway
+    k8s.kuboard.cn/name: gateway-springcloud-gateway
+spec:
+  rules:
+    - host: gateway.k3s.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: gateway-springcloud-gateway
+              servicePort: kdayea
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: monitor-skywalking
+  annotations:
+    k8s.kuboard.cn/workload: monitor-skywalking
+    deployment.kubernetes.io/revision: '13'
+    k8s.kuboard.cn/ingress: 'false'
+    k8s.kuboard.cn/service: ClusterIP
+  labels:
+    k8s.kuboard.cn/layer: monitor
+    k8s.kuboard.cn/name: monitor-skywalking
+spec:
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/layer: monitor
+      k8s.kuboard.cn/name: monitor-skywalking
+  revisionHistoryLimit: 2
+  template:
+    metadata:
+      labels:
+        k8s.kuboard.cn/layer: monitor
+        k8s.kuboard.cn/name: monitor-skywalking
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: '172.16.114.245:5000/dev/skywalking-oap-server:latest'
+          imagePullPolicy: Always
+          name: skywalking-oap-server
+          volumeMounts:
+            - name: sk-nfs
+              mountPath: /skywalking/ext-libs
+              subPath: ext-libs
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+          env:
+            - name: SW_STORAGE
+              value: mysql
+            - name: SW_JDBC_URL
+              value: 'jdbc:mysql://172.16.114.72:3306/swtest'
+            - name: SW_DATA_SOURCE_USER
+              value: root
+            - name: SW_DATA_SOURCE_PASSWORD
+              value: Mysql-2019
+            - name: JAVA_OPTS
+              value: '-Xmx2g -Xms2g'
+          lifecycle: {}
+          ports:
+            - name: rest
+              containerPort: 12800
+              protocol: TCP
+            - name: grpc
+              containerPort: 11800
+              protocol: TCP
+      volumes:
+        - name: sk-nfs
+          nfs:
+            server: 172.16.114.245
+            path: /data/nfs/skywalking/apache-skywalking-apm-bin
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      nodeSelector:
+        dev.arch: amd64
+        dev.node: master
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: monitor-skywalking
+  annotations:
+    k8s.kuboard.cn/workload: monitor-skywalking
+  labels:
+    k8s.kuboard.cn/layer: monitor
+    k8s.kuboard.cn/name: monitor-skywalking
+spec:
+  selector:
+    k8s.kuboard.cn/layer: monitor
+    k8s.kuboard.cn/name: monitor-skywalking
+  type: ClusterIP
+  ports:
+    - port: 11800
+      targetPort: 11800
+      protocol: TCP
+      name: grpc
+      nodePort: 0
+    - port: 12800
+      targetPort: 12800
+      protocol: TCP
+      name: http
+      nodePort: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: svc-demo-service
+  annotations:
+    k8s.kuboard.cn/workload: svc-demo-service
+    deployment.kubernetes.io/revision: '27'
+    k8s.kuboard.cn/ingress: 'false'
+    k8s.kuboard.cn/service: ClusterIP
+  labels:
+    k8s.kuboard.cn/layer: svc
+    k8s.kuboard.cn/name: svc-demo-service
+spec:
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/layer: svc
+      k8s.kuboard.cn/name: svc-demo-service
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.kuboard.cn/layer: svc
+        k8s.kuboard.cn/name: svc-demo-service
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers:
+        - image: '172.16.114.245:5000/dev/skywalking-agent:latest'
+          imagePullPolicy: Always
+          name: skywalking-agent
+          volumeMounts:
+            - name: agent
+              mountPath: /skywalking/agent
+          command:
+            - sh
+            - '-c'
+            - >-
+              set -ex;mkdir -p /skywalking/agent;cp -r /opt/skywalking/agent/*
+              /skywalking/agent;
+          resources:
+            limits:
+            requests:
+          env: []
+      containers:
+        - image: '172.16.114.245:5000/ezml/demo-service:v202007161800'
+          imagePullPolicy: IfNotPresent
+          name: demo-service
+          volumeMounts:
+            - name: agent
+              mountPath: /opt/skywalking/agent
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+          env: []
+          envFrom:
+            - configMapRef:
+                name: common-config
+          lifecycle: {}
+      volumes:
+        - name: agent
+          emptyDir: {}
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      nodeSelector:
+        dev.arch: amd64
+        dev.node: master
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: svc-demo-service
+  annotations:
+    k8s.kuboard.cn/workload: svc-demo-service
+  labels:
+    k8s.kuboard.cn/layer: svc
+    k8s.kuboard.cn/name: svc-demo-service
+spec:
+  selector:
+    k8s.kuboard.cn/layer: svc
+    k8s.kuboard.cn/name: svc-demo-service
+  type: ClusterIP
+  ports:
+    - port: 10020
+      targetPort: 10020
+      protocol: TCP
+      name: demo-service
+      nodePort: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: svc-user-service
+  annotations:
+    k8s.kuboard.cn/workload: svc-user-service
+    deployment.kubernetes.io/revision: '17'
+    k8s.kuboard.cn/ingress: 'false'
+    k8s.kuboard.cn/service: ClusterIP
+  labels:
+    k8s.kuboard.cn/layer: svc
+    k8s.kuboard.cn/name: svc-user-service
+spec:
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/layer: svc
+      k8s.kuboard.cn/name: svc-user-service
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.kuboard.cn/layer: svc
+        k8s.kuboard.cn/name: svc-user-service
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers:
+        - image: '172.16.114.245:5000/dev/skywalking-agent:latest'
+          imagePullPolicy: Always
+          name: skywalking-agent
+          volumeMounts:
+            - name: agent
+              mountPath: /skywalking/agent
+          command:
+            - sh
+            - '-c'
+            - >-
+              set -ex;mkdir -p /skywalking/agent;cp -r /opt/skywalking/agent/*
+              /skywalking/agent;
+          resources:
+            limits:
+            requests:
+          env: []
+      containers:
+        - image: '172.16.114.245:5000/ezml/user-service:v202007161800'
+          imagePullPolicy: IfNotPresent
+          name: user-service
+          volumeMounts:
+            - name: agent
+              mountPath: /opt/skywalking/agent
+          resources:
+            limits:
+            requests:
+          env: []
+          envFrom:
+            - configMapRef:
+                name: common-config
+          lifecycle: {}
+      volumes:
+        - name: agent
+          emptyDir: {}
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      nodeSelector:
+        dev.arch: amd64
+        dev.node: master
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: svc-user-service
+  annotations:
+    k8s.kuboard.cn/workload: svc-user-service
+  labels:
+    k8s.kuboard.cn/layer: svc
+    k8s.kuboard.cn/name: svc-user-service
+spec:
+  selector:
+    k8s.kuboard.cn/layer: svc
+    k8s.kuboard.cn/name: svc-user-service
+  type: ClusterIP
+  ports:
+    - port: 49092
+      targetPort: 9091
+      protocol: TCP
+      name: user-service
+      nodePort: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: web-user-service
+  annotations:
+    k8s.kuboard.cn/workload: web-user-service
+    deployment.kubernetes.io/revision: '15'
+    k8s.kuboard.cn/ingress: 'true'
+    k8s.kuboard.cn/service: ClusterIP
+  labels:
+    k8s.kuboard.cn/layer: web
+    k8s.kuboard.cn/name: web-user-service
+spec:
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/layer: web
+      k8s.kuboard.cn/name: web-user-service
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      labels:
+        k8s.kuboard.cn/layer: web
+        k8s.kuboard.cn/name: web-user-service
+    spec:
+      securityContext:
+        seLinuxOptions: {}
+      imagePullSecrets: []
+      restartPolicy: Always
+      initContainers: []
+      containers:
+        - image: '172.16.114.245:5000/ezml/user-service-web:v202007161800'
+          imagePullPolicy: Always
+          name: user-service-web
+          volumeMounts: []
+          resources:
+            limits:
+            requests:
+          env: []
+          envFrom:
+            - configMapRef:
+                name: common-config
+          lifecycle: {}
+      volumes: []
+      dnsPolicy: ClusterFirst
+      dnsConfig: {}
+      nodeSelector:
+        dev.arch: amd64
+        dev.node: master
+      terminationGracePeriodSeconds: 30
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  replicas: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: default
+  name: web-user-service
+  annotations:
+    k8s.kuboard.cn/workload: web-user-service
+  labels:
+    k8s.kuboard.cn/layer: web
+    k8s.kuboard.cn/name: web-user-service
+spec:
+  selector:
+    k8s.kuboard.cn/layer: web
+    k8s.kuboard.cn/name: web-user-service
+  type: ClusterIP
+  ports:
+    - port: 49091
+      targetPort: 9091
+      protocol: TCP
+      name: user-web
+      nodePort: 0
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: default
+  name: web-user-service
+  annotations:
+    k8s.kuboard.cn/workload: web-user-service
+  labels:
+    k8s.kuboard.cn/layer: web
+    k8s.kuboard.cn/name: web-user-service
+spec:
+  rules:
+    - host: user-web.k3s.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: web-user-service
+              servicePort: user-web
+
+---
+metadata:
+  name: common-config
+  namespace: default
+  managedFields:
+    - manager: Mozilla
+      operation: Update
+      apiVersion: v1
+      time: '2020-07-03T08:59:36Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data':
+          .: {}
+          'f:EZML_DEMO_SERVICE_EXT_CONFIG': {}
+          'f:EZML_DEMO_SERVICE_JAVA_OPTS': {}
+          'f:EZML_EUREKA_EXT_CONFIG': {}
+          'f:EZML_EUREKA_JAVA_OPTS': {}
+          'f:EZML_GATEWAY_API_URL': {}
+          'f:EZML_GATEWAY_EXT_CONFIG': {}
+          'f:EZML_GATEWAY_JAVA_OPTS': {}
+          'f:EZML_USER_SERVICE_EXT_CONFIG': {}
+          'f:EZML_USER_SERVICE_JAVA_OPTS': {}
+data:
+  EZML_DEMO_SERVICE_EXT_CONFIG: >-
+    --eureka.client.service-url.defaultZone=http://cloud-eureka-server:19101/eureka/
+    --spring.redis.host=172.16.114.245 --spring.redis.port=6379
+    --spring.redis.password=aispeech2020
+  EZML_DEMO_SERVICE_JAVA_OPTS: >-
+    -Xmx1024m -Xms512m -javaagent:/opt/skywalking/agent/skywalking-agent.jar
+    -Dskywalking.agent.service_name=svc-demo-service
+    -Dskywalking.collector.backend_service=monitor-skywalking:11800
+  EZML_EUREKA_EXT_CONFIG: >-
+    --eureka.client.service-url.defaultZone=http://cloud-eureka-server:19101/eureka/
+    --spring.redis.host=172.16.114.245 --spring.redis.port=6379
+    --spring.redis.password=aispeech2020
+  EZML_EUREKA_JAVA_OPTS: >-
+    -Xmx1024m -Xms512m -javaagent:/opt/skywalking/agent/skywalking-agent.jar
+    -Dskywalking.agent.service_name=eureka
+    -Dskywalking.collector.backend_service=monitor-skywalking:11800
+  EZML_GATEWAY_API_URL: 'http://gateway.k3s.com'
+  EZML_GATEWAY_EXT_CONFIG: >-
+    --app.eureka-server-uri=http://cloud-eureka-server:19101/
+    --spring.redis.host=172.16.114.245 --spring.redis.port=6379
+    --spring.redis.password=aispeech2020
+  EZML_GATEWAY_JAVA_OPTS: >-
+    -Xmx1024m -Xms512m -javaagent:/opt/skywalking/agent/skywalking-agent.jar
+    -Dskywalking.agent.service_name=gateway
+    -Dskywalking.collector.backend_service=monitor-skywalking:11800
+  EZML_USER_SERVICE_EXT_CONFIG: >-
+    --eureka.client.service-url.defaultZone=http://cloud-eureka-server:19101/eureka/
+    --spring.redis.host=172.16.114.245 --spring.redis.port=6379
+    --spring.redis.password=aispeech2020
+  EZML_USER_SERVICE_JAVA_OPTS: >-
+    -Xmx1024m -Xms512m -javaagent:/opt/skywalking/agent/skywalking-agent.jar
+    -Dskywalking.agent.service_name=svc-user-service
+    -Dskywalking.collector.backend_service=monitor-skywalking:11800
+kind: ConfigMap
+apiVersion: v1
+
