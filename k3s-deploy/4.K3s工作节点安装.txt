@@ -1,9 +1,6 @@
 #环境准备：
-apt install -y htop
-apt install -y vim
-apt install -y curl
-apt install -y wget
-apt install -y nfs-common
+apt install -y htop vim curl wget nfs-common
+ 
 
 #1.安装 Docker 环境
 #vim  /etc/apt/sources.list
